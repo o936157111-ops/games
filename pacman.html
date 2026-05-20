@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>經典小精靈 Pacman - 第七關通道路線修正版</title>
+    <title>經典小精靈 Pacman - 自由選關+復活修正版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -38,12 +38,25 @@
             width: 100%;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 14px;
             font-weight: bold;
             letter-spacing: 1px;
             margin-bottom: 12px;
             font-family: monospace;
             color: #00ffcc;
+        }
+        /* 選關下拉選單樣式 */
+        #stageSelect {
+            background: #222;
+            color: #ffff00;
+            border: 1px solid #444;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            outline: none;
         }
         #canvasWrapper {
             position: relative;
@@ -140,7 +153,22 @@
     <div id="gameContainer">
         <div id="hud">
             <span id="scoreTxt">SCORE: 0</span>
-            <span id="stageTxt">STAGE: 1</span>
+            <!-- 🛠️ 這裡加入了可直接點選切換的下拉選單 -->
+            <span>
+                STAGE: 
+                <select id="stageSelect">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </span>
             <span id="dotsTxt">DOTS: 0</span>
         </div>
         
@@ -149,7 +177,7 @@
             
             <div id="gameOverlay">
                 <div id="overlayTitle">PAC-MAN</div>
-                <div id="overlaySub">挑戰全新設計的 10 大迷宮！<br>鍵盤方向鍵或下方按鈕皆可控制。<br>吃掉所有豆子即可晉級！</div>
+                <div id="overlaySub">挑戰全新設計的 10 大迷宮！<br>可由上方自由選擇關卡切換。<br>吃掉所有豆子即可晉級！</div>
                 <button id="startBtn">START GAME</button>
             </div>
         </div>
@@ -171,7 +199,7 @@
     const overlayTitle = document.getElementById('overlayTitle');
     const overlaySub = document.getElementById('overlaySub');
     const scoreTxt = document.getElementById('scoreTxt');
-    const stageTxt = document.getElementById('stageTxt');
+    const stageSelect = document.getElementById('stageSelect');
     const dotsTxt = document.getElementById('dotsTxt');
 
     let score = 0;
@@ -286,15 +314,15 @@
             [1,1,1,1,1,0,0,0,0,1,1,1,1,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 7 【🛠️ 雙側走道打通修正版 🛠️】
+        // MAP 7 (雙側打通版)
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
             [1,0,1,1,1,0,1,1,0,1,1,1,0,1],
             [1,0,0,0,1,0,0,0,0,1,0,0,0,1],
-            [1,0,1,0,1,1,2,2,1,1,0,1,0,1], // 左右打通：將原本的 1 換成 0
-            [1,0,1,0,0,0,2,2,0,0,0,1,0,1], // 左右打通：將原本的 1 換成 0
-            [1,0,1,1,1,0,2,2,0,1,1,1,0,1], // 左右打通：將原本的 1 換成 0
+            [1,0,1,0,1,1,2,2,1,1,0,1,0,1], 
+            [1,0,1,0,0,0,2,2,0,0,0,1,0,1], 
+            [1,0,1,1,1,0,2,2,0,1,1,1,0,1], 
             [1,0,0,0,1,0,2,2,0,1,0,0,0,1],
             [1,0,1,0,1,1,1,1,1,1,0,1,0,1],
             [1,0,1,0,0,0,0,0,0,0,0,1,0,1],
@@ -320,7 +348,7 @@
             [1,3,1,1,1,1,0,0,1,1,1,1,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 9
+        // MAP 9 (重生死局修正版)
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
@@ -362,8 +390,8 @@
     let pacman = {
         gridX: 1, gridY: 1,
         screenX: 30, screenY: 30,
-        dirX: 1, dirY: 0,
-        nextDirX: 1, nextDirY: 0,
+        dirX: 0, dirY: 0,
+        nextDirX: 0, nextDirY: 0,
         speed: 1, progress: 0, 
         mouthAngle: 0.2, mouthClosing: false
     };
@@ -374,7 +402,7 @@
 
     function initGame() {
         score = 0;
-        stage = 1;
+        stage = parseInt(stageSelect.value); // 讀取當前下拉選單的數值
         isStageClearing = false;
         startNextStage(true); 
     }
@@ -407,6 +435,8 @@
         frightenTimer = 0;
         
         pacman.speed = 1.0 + Math.min(5, stage - 1) * 0.08;
+        
+        // 確保關卡在 1~10 範疇內
         let mapIndex = (stage - 1) < 10 ? (stage - 1) : Math.floor(Math.random() * 10);
         
         if (isNewStage) {
@@ -424,7 +454,7 @@
 
         dotsTxt.textContent = `DOTS: ${dots.length}`;
         scoreTxt.textContent = `SCORE: ${score}`;
-        stageTxt.textContent = `STAGE: ${stage}`;
+        stageSelect.value = stage; // 同步更新 UI 下拉選單的值
         
         gameOverlay.style.visibility = 'hidden'; 
         gameOverlay.style.display = 'none';
@@ -433,21 +463,19 @@
     }
 
     function resetCharactersPosition() {
-        let pSpawned = false;
-        for(let r=0; r<MAP_SIZE; r++) {
-            for(let c=0; c<MAP_SIZE; c++) {
-                if(!pSpawned && currentMaze[r][c] === 0 && r > 1 && c > 1) {
+        let foundSafe = false;
+        for (let r = 1; r < MAP_SIZE - 1; r++) {
+            for (let c = 1; c < MAP_SIZE - 1; c++) {
+                if (currentMaze[r][c] === 0 && (r > 2 || c > 2)) {
                     pacman.gridX = c;
                     pacman.gridY = r;
-                    pSpawned = true;
+                    foundSafe = true;
+                    break;
                 }
             }
+            if(foundSafe) break;
         }
-
-        if(!pSpawned) {
-            pacman.gridX = 1;
-            pacman.gridY = 1;
-        }
+        if(!foundSafe) { pacman.gridX = 1; pacman.gridY = 1; }
 
         pacman.screenX = pacman.gridX * TILE_SIZE + TILE_SIZE/2;
         pacman.screenY = pacman.gridY * TILE_SIZE + TILE_SIZE/2;
@@ -456,17 +484,19 @@
         pacman.progress = 0;
 
         ghosts = [
-            { gridX: 6, gridY: 5, color: ghostColors[0], dirX: 0, dirY: -1, isEaten: false },
-            { gridX: 7, gridY: 5, color: ghostColors[1], dirX: 0, dirY: -1, isEaten: false },
-            { gridX: 6, gridY: 6, color: ghostColors[2], dirX: 1, dirY: 0, isEaten: false },
-            { gridX: 7, gridY: 6, color: ghostColors[3], dirX: -1, dirY: 0, isEaten: false }
+            { gridX: 6, gridY: 4, color: ghostColors[0], dirX: 0, dirY: -1, isEaten: false },
+            { gridX: 7, gridY: 4, color: ghostColors[1], dirX: 0, dirY: -1, isEaten: false },
+            { gridX: 6, gridY: 5, color: ghostColors[2], dirX: 1, dirY: 0, isEaten: false },
+            { gridX: 7, gridY: 5, color: ghostColors[3], dirX: -1, dirY: 0, isEaten: false }
         ];
 
         ghosts.forEach(g => {
+            if (currentMaze[g.gridY][g.gridX] === 1) {
+                g.gridX = 6; g.gridY = 5; 
+            }
             g.screenX = g.gridX * TILE_SIZE + TILE_SIZE/2;
             g.screenY = g.gridY * TILE_SIZE + TILE_SIZE/2;
             g.progress = 0;
-            currentMaze[g.gridY][g.gridX] = 2; 
         });
     }
 
@@ -544,6 +574,7 @@
                 
                 startBtn.onclick = function() {
                     stage++;
+                    if(stage > 10) stage = 1; // 循環或進入隨機
                     startNextStage(true); 
                 };
                 return;
@@ -609,7 +640,7 @@
                     if (!ghost.isEaten) {
                         score += 200;
                         scoreTxt.textContent = `SCORE: ${score}`;
-                        ghost.gridX = 6; ghost.gridY = 6;
+                        ghost.gridX = 6; ghost.gridY = 5;
                         ghost.screenX = ghost.gridX * TILE_SIZE + TILE_SIZE/2;
                         ghost.screenY = ghost.gridY * TILE_SIZE + TILE_SIZE/2;
                         ghost.progress = 0;
@@ -732,6 +763,18 @@
         if (e.key === 'ArrowRight') setNextDir(1, 0);
     });
 
+    // 🛠️ 監聽下拉選單事件：玩家隨時選關立刻切換 🛠️
+    stageSelect.addEventListener('change', () => {
+        stage = parseInt(stageSelect.value);
+        if (!gameOver) {
+            // 如果遊戲進行中換關，直接載入新關卡
+            startNextStage(true);
+        } else {
+            // 如果在主畫面或結束畫面換關，更新提示資訊
+            overlaySub.textContent = `已切換至第 ${stage} 關！\n點擊下方按鈕開始挑戰新迷宮。`;
+        }
+    });
+
     const btns = {
         up: document.getElementById('btnUp'),
         down: document.getElementById('btnDown'),
@@ -739,7 +782,6 @@
         right: document.getElementById('btnRight')
     };
 
-    // 觸控與點擊優化
     function bindControl(element, vx, vy) {
         element.addEventListener('mousedown', (e) => { e.preventDefault(); setNextDir(vx, vy); });
         element.addEventListener('touchstart', (e) => { e.preventDefault(); setNextDir(vx, vy); }, { passive: false });

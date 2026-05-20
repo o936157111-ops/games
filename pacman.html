@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>經典小精靈 Pacman - 10大地圖挑戰修正版</title>
+    <title>經典小精靈 Pacman - 第七關通道路線修正版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -97,7 +97,7 @@
             background: #ddff00;
         }
 
-        /* 經典四方向按鈕區 */
+        /* 四方向按鈕 */
         #controlsContainer {
             margin-top: 20px;
             display: flex;
@@ -154,7 +154,7 @@
             </div>
         </div>
 
-        <!-- 經典四方向按鈕 -->
+        <!-- 四方向按鈕 -->
         <div id="controlsContainer">
             <div class="btn" id="btnUp">▲</div>
             <div class="btn" id="btnLeft">◀</div>
@@ -183,7 +183,6 @@
     const TILE_SIZE = 20;
     const MAP_SIZE = 14; 
 
-    // 10 張完全不同的迷宮地圖數據 (0:豆子, 1:牆壁, 2:鬼屋區域/空地, 3:大力丸)
     const maps = [
         // MAP 1
         [
@@ -287,15 +286,15 @@
             [1,1,1,1,1,0,0,0,0,1,1,1,1,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 7
+        // MAP 7 【🛠️ 雙側走道打通修正版 🛠️】
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
             [1,0,1,1,1,0,1,1,0,1,1,1,0,1],
             [1,0,0,0,1,0,0,0,0,1,0,0,0,1],
-            [1,1,1,0,1,1,2,2,1,1,0,1,1,1],
-            [1,1,1,0,0,0,2,2,0,0,0,1,1,1],
-            [1,1,1,1,1,0,2,2,0,1,1,1,1,1],
+            [1,0,1,0,1,1,2,2,1,1,0,1,0,1], // 左右打通：將原本的 1 換成 0
+            [1,0,1,0,0,0,2,2,0,0,0,1,0,1], // 左右打通：將原本的 1 換成 0
+            [1,0,1,1,1,0,2,2,0,1,1,1,0,1], // 左右打通：將原本的 1 換成 0
             [1,0,0,0,1,0,2,2,0,1,0,0,0,1],
             [1,0,1,0,1,1,1,1,1,1,0,1,0,1],
             [1,0,1,0,0,0,0,0,0,0,0,1,0,1],
@@ -377,11 +376,27 @@
         score = 0;
         stage = 1;
         isStageClearing = false;
-        startNextStage();
+        startNextStage(true); 
     }
 
-    function startNextStage() {
-        // 【核心修正】切換關卡前，必須確保舊的動畫畫格被完全砍掉，防止多重 Loop 疊加卡死
+    function restartCurrentStage() {
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
+        gameOver = false;
+        isStageClearing = false;
+        frightenTimer = 0;
+
+        resetCharactersPosition();
+
+        gameOverlay.style.visibility = 'hidden'; 
+        gameOverlay.style.display = 'none';
+        animate();
+    }
+
+    function startNextStage(isNewStage = true) {
         if (animationId) {
             cancelAnimationFrame(animationId);
             animationId = null;
@@ -391,25 +406,36 @@
         isStageClearing = false;
         frightenTimer = 0;
         
-        // 隨著關卡變快
         pacman.speed = 1.0 + Math.min(5, stage - 1) * 0.08;
-
-        // 決定當前地圖索引
         let mapIndex = (stage - 1) < 10 ? (stage - 1) : Math.floor(Math.random() * 10);
         
-        // 【核心修正】深拷貝全新關卡的地圖牆壁數據
-        currentMaze = JSON.parse(JSON.stringify(maps[mapIndex]));
+        if (isNewStage) {
+            currentMaze = JSON.parse(JSON.stringify(maps[mapIndex]));
+            dots = [];
+            for(let r=0; r<MAP_SIZE; r++) {
+                for(let c=0; c<MAP_SIZE; c++) {
+                    if(currentMaze[r][c] === 0) dots.push({x: c, y: r, big: false});
+                    if(currentMaze[r][c] === 3) dots.push({x: c, y: r, big: true});
+                }
+            }
+        }
 
-        // 重新掃描並佈置新地圖的豆子與安全出生點
-        dots = [];
-        let pSpawned = false;
+        resetCharactersPosition();
+
+        dotsTxt.textContent = `DOTS: ${dots.length}`;
+        scoreTxt.textContent = `SCORE: ${score}`;
+        stageTxt.textContent = `STAGE: ${stage}`;
         
+        gameOverlay.style.visibility = 'hidden'; 
+        gameOverlay.style.display = 'none';
+
+        animate();
+    }
+
+    function resetCharactersPosition() {
+        let pSpawned = false;
         for(let r=0; r<MAP_SIZE; r++) {
             for(let c=0; c<MAP_SIZE; c++) {
-                if(currentMaze[r][c] === 0) dots.push({x: c, y: r, big: false});
-                if(currentMaze[r][c] === 3) dots.push({x: c, y: r, big: true});
-                
-                // 動態幫小精靈尋找這張新地圖開局的安全非牆壁空地
                 if(!pSpawned && currentMaze[r][c] === 0 && r > 1 && c > 1) {
                     pacman.gridX = c;
                     pacman.gridY = r;
@@ -418,20 +444,17 @@
             }
         }
 
-        // 萬一沒找到理想空地，強制設定在左上安全區
         if(!pSpawned) {
             pacman.gridX = 1;
             pacman.gridY = 1;
         }
 
-        // 【核心修正】精準對齊格線，並歸零進度狀態，防止座標錯位導致無法移動
         pacman.screenX = pacman.gridX * TILE_SIZE + TILE_SIZE/2;
         pacman.screenY = pacman.gridY * TILE_SIZE + TILE_SIZE/2;
         pacman.dirX = 0; pacman.dirY = 0;
         pacman.nextDirX = 0; pacman.nextDirY = 0;
         pacman.progress = 0;
 
-        // 固定重置小鬼在中央鬼屋或附近
         ghosts = [
             { gridX: 6, gridY: 5, color: ghostColors[0], dirX: 0, dirY: -1, isEaten: false },
             { gridX: 7, gridY: 5, color: ghostColors[1], dirX: 0, dirY: -1, isEaten: false },
@@ -443,20 +466,8 @@
             g.screenX = g.gridX * TILE_SIZE + TILE_SIZE/2;
             g.screenY = g.gridY * TILE_SIZE + TILE_SIZE/2;
             g.progress = 0;
-            currentMaze[g.gridY][g.gridX] = 2; // 開放鬼屋通行
+            currentMaze[g.gridY][g.gridX] = 2; 
         });
-
-        // 更新介面文字
-        dotsTxt.textContent = `DOTS: ${dots.length}`;
-        scoreTxt.textContent = `SCORE: ${score}`;
-        stageTxt.textContent = `STAGE: ${stage}`;
-        
-        // 隱藏覆蓋版面
-        gameOverlay.style.visibility = 'hidden'; 
-        gameOverlay.style.display = 'none';
-
-        // 重新注入全新遊戲引擎時鐘
-        animate();
     }
 
     function isWall(gx, gy) {
@@ -469,7 +480,6 @@
 
         if (frightenTimer > 0) frightenTimer--;
 
-        // 當剛好走到格線上時，判定是否能轉向
         if (pacman.progress === 0) {
             if (!isWall(pacman.gridX + pacman.nextDirX, pacman.gridY + pacman.nextDirY)) {
                 pacman.dirX = pacman.nextDirX;
@@ -481,7 +491,6 @@
             }
         }
 
-        // 正在移動中，更新平滑渲染座標
         if (pacman.dirX !== 0 || pacman.dirY !== 0) {
             pacman.progress += pacman.speed;
             pacman.screenX += pacman.dirX * pacman.speed;
@@ -496,7 +505,6 @@
             }
         }
 
-        // 剛好走完一整格 (20像素) 的處理
         if (pacman.progress >= TILE_SIZE - 0.001) {
             pacman.gridX += pacman.dirX;
             pacman.gridY += pacman.dirY;
@@ -504,7 +512,6 @@
             pacman.screenX = pacman.gridX * TILE_SIZE + TILE_SIZE/2;
             pacman.screenY = pacman.gridY * TILE_SIZE + TILE_SIZE/2;
 
-            // 吃豆子檢查
             for (let i = dots.length - 1; i >= 0; i--) {
                 if (dots[i].x === pacman.gridX && dots[i].y === pacman.gridY) {
                     if (dots[i].big) {
@@ -520,7 +527,6 @@
                 }
             }
 
-            // 本關豆子全部吃光
             if (dots.length === 0) {
                 isStageClearing = true;
                 gameOver = true;
@@ -538,13 +544,12 @@
                 
                 startBtn.onclick = function() {
                     stage++;
-                    startNextStage();
+                    startNextStage(true); 
                 };
                 return;
             }
         }
 
-        // 小鬼移動更新
         ghosts.forEach(ghost => {
             let baseGhostSpeed = 0.8 + Math.min(5, stage - 1) * 0.06;
             let gSpeed = frightenTimer > 0 ? (baseGhostSpeed * 0.55) : baseGhostSpeed; 
@@ -619,7 +624,6 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 關卡主題色變化
         const colors = ['#0000d6', '#00aa00', '#d600d6', '#d66a00', '#00aaaa', '#aa5500', '#aa0000', '#5555ff', '#33aa33', '#e6b800'];
         ctx.fillStyle = colors[(stage - 1) % colors.length];
 
@@ -702,17 +706,16 @@
         gameOverlay.style.visibility = 'visible';
         gameOverlay.style.display = 'flex';
         overlayTitle.textContent = "GAME OVER";
-        overlaySub.textContent = `在第 ${stage} 關失手了！\n這裡的地形很棘手對吧？\n總得分: ${score}`;
-        startBtn.textContent = "RESTART";
+        overlaySub.textContent = `在第 ${stage} 關被抓到了！\n別氣餒，分數和關卡都幫你保留了！\n目前得分: ${score}`;
+        startBtn.textContent = "TRY AGAIN";
         
-        startBtn.onclick = initGame;
+        startBtn.onclick = restartCurrentStage; 
     }
 
     function setNextDir(vx, vy) {
         if (gameOver || isStageClearing) return;
         pacman.nextDirX = vx;
         pacman.nextDirY = vy;
-        // 如果小精靈原本停著，按下按鈕能走就立刻朝該方向出發
         if (pacman.dirX === 0 && pacman.dirY === 0 && pacman.progress === 0) {
             if (!isWall(pacman.gridX + vx, pacman.gridY + vy)) {
                 pacman.dirX = vx;
@@ -736,6 +739,7 @@
         right: document.getElementById('btnRight')
     };
 
+    // 觸控與點擊優化
     function bindControl(element, vx, vy) {
         element.addEventListener('mousedown', (e) => { e.preventDefault(); setNextDir(vx, vy); });
         element.addEventListener('touchstart', (e) => { e.preventDefault(); setNextDir(vx, vy); }, { passive: false });

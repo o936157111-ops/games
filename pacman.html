@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>經典小精靈 Pacman - 10大地圖挑戰版</title>
+    <title>經典小精靈 Pacman - 10大地圖挑戰修正版</title>
     <style>
         * {
             box-sizing: border-box;
@@ -178,14 +178,14 @@
     let stage = 1;
     let gameOver = true;
     let isStageClearing = false;
-    let animationId;
+    let animationId = null;
 
     const TILE_SIZE = 20;
     const MAP_SIZE = 14; 
 
-    // 10 張截然不同的地圖數據 (0:豆子, 1:牆壁, 2:鬼屋/空地, 3:大力丸)
+    // 10 張完全不同的迷宮地圖數據 (0:豆子, 1:牆壁, 2:鬼屋區域/空地, 3:大力丸)
     const maps = [
-        // MAP 1: 經典十字星
+        // MAP 1
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
@@ -202,7 +202,7 @@
             [1,3,0,0,0,0,0,0,0,0,0,0,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 2: 中央大包圍
+        // MAP 2
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,0,0,0,0,0,0,3,1],
@@ -219,7 +219,7 @@
             [1,3,1,1,1,0,0,0,0,1,1,1,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 3: 幽閉雙長廊
+        // MAP 3
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,1,0,0,0,0,0,0,0,0,1,3,1],
@@ -236,7 +236,7 @@
             [1,3,0,0,0,1,1,1,1,0,0,0,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 4: 四角密室
+        // MAP 4
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,1,1,0,0,1,1,0,0,3,1],
@@ -253,7 +253,7 @@
             [1,3,0,0,0,1,1,1,1,0,0,0,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 5: 迴音階梯
+        // MAP 5
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,0,0,0,0,0,0,3,1],
@@ -270,7 +270,7 @@
             [1,0,0,0,0,0,0,0,0,0,0,0,0,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 6: 魔幻九宮格
+        // MAP 6
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,1,1,0,0,1,1,0,0,3,1],
@@ -287,7 +287,7 @@
             [1,1,1,1,1,0,0,0,0,1,1,1,1,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 7: 雙十字大黃蜂
+        // MAP 7
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
@@ -304,7 +304,7 @@
             [1,3,0,0,0,0,0,0,0,0,0,0,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 8: 幾何沙丘
+        // MAP 8
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,0,0,0,0,0,0,3,1],
@@ -321,7 +321,7 @@
             [1,3,1,1,1,1,0,0,1,1,1,1,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 9: 漏斗沙漏
+        // MAP 9
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,0,0,0,1,1,0,0,0,0,3,1],
@@ -338,7 +338,7 @@
             [1,3,1,1,1,1,1,1,1,1,1,1,3,1],
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
         ],
-        // MAP 10: 終極瘋狂死胡同
+        // MAP 10
         [
             [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
             [1,3,0,1,1,0,0,0,0,1,1,0,3,1],
@@ -381,19 +381,26 @@
     }
 
     function startNextStage() {
+        // 【核心修正】切換關卡前，必須確保舊的動畫畫格被完全砍掉，防止多重 Loop 疊加卡死
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+        }
+
         gameOver = false;
+        isStageClearing = false;
         frightenTimer = 0;
         
-        // 難度曲線平衡
+        // 隨著關卡變快
         pacman.speed = 1.0 + Math.min(5, stage - 1) * 0.08;
 
-        // 挑選地圖邏輯：前 10 關依序輪流，第 11 關之後隨機挑選
+        // 決定當前地圖索引
         let mapIndex = (stage - 1) < 10 ? (stage - 1) : Math.floor(Math.random() * 10);
         
-        // 深拷貝當前地圖數據，避免吃完豆子後無法重置
+        // 【核心修正】深拷貝全新關卡的地圖牆壁數據
         currentMaze = JSON.parse(JSON.stringify(maps[mapIndex]));
 
-        // 動態計算豆子跟玩家、小鬼位置
+        // 重新掃描並佈置新地圖的豆子與安全出生點
         dots = [];
         let pSpawned = false;
         
@@ -402,8 +409,8 @@
                 if(currentMaze[r][c] === 0) dots.push({x: c, y: r, big: false});
                 if(currentMaze[r][c] === 3) dots.push({x: c, y: r, big: true});
                 
-                // 找尋第一個不是牆壁也不是鬼屋的空地當作小精靈出生點
-                if(!pSpawned && currentMaze[r][c] === 0 && r > 0 && c > 0) {
+                // 動態幫小精靈尋找這張新地圖開局的安全非牆壁空地
+                if(!pSpawned && currentMaze[r][c] === 0 && r > 1 && c > 1) {
                     pacman.gridX = c;
                     pacman.gridY = r;
                     pSpawned = true;
@@ -411,14 +418,20 @@
             }
         }
 
-        // 重置小精靈螢幕座標
+        // 萬一沒找到理想空地，強制設定在左上安全區
+        if(!pSpawned) {
+            pacman.gridX = 1;
+            pacman.gridY = 1;
+        }
+
+        // 【核心修正】精準對齊格線，並歸零進度狀態，防止座標錯位導致無法移動
         pacman.screenX = pacman.gridX * TILE_SIZE + TILE_SIZE/2;
         pacman.screenY = pacman.gridY * TILE_SIZE + TILE_SIZE/2;
-        pacman.dirX = 1; pacman.dirY = 0;
-        pacman.nextDirX = 1; pacman.nextDirY = 0;
+        pacman.dirX = 0; pacman.dirY = 0;
+        pacman.nextDirX = 0; pacman.nextDirY = 0;
         pacman.progress = 0;
 
-        // 固定小鬼出生在中央鬼屋區周圍 (6,5) (7,5) (6,6) (7,6)
+        // 固定重置小鬼在中央鬼屋或附近
         ghosts = [
             { gridX: 6, gridY: 5, color: ghostColors[0], dirX: 0, dirY: -1, isEaten: false },
             { gridX: 7, gridY: 5, color: ghostColors[1], dirX: 0, dirY: -1, isEaten: false },
@@ -430,17 +443,19 @@
             g.screenX = g.gridX * TILE_SIZE + TILE_SIZE/2;
             g.screenY = g.gridY * TILE_SIZE + TILE_SIZE/2;
             g.progress = 0;
-            // 確保鬼屋內部不視為實體牆壁阻擋
-            currentMaze[g.gridY][g.gridX] = 2; 
+            currentMaze[g.gridY][g.gridX] = 2; // 開放鬼屋通行
         });
 
+        // 更新介面文字
         dotsTxt.textContent = `DOTS: ${dots.length}`;
         scoreTxt.textContent = `SCORE: ${score}`;
         stageTxt.textContent = `STAGE: ${stage}`;
+        
+        // 隱藏覆蓋版面
         gameOverlay.style.visibility = 'hidden'; 
         gameOverlay.style.display = 'none';
 
-        if (animationId) cancelAnimationFrame(animationId);
+        // 重新注入全新遊戲引擎時鐘
         animate();
     }
 
@@ -454,6 +469,7 @@
 
         if (frightenTimer > 0) frightenTimer--;
 
+        // 當剛好走到格線上時，判定是否能轉向
         if (pacman.progress === 0) {
             if (!isWall(pacman.gridX + pacman.nextDirX, pacman.gridY + pacman.nextDirY)) {
                 pacman.dirX = pacman.nextDirX;
@@ -465,6 +481,7 @@
             }
         }
 
+        // 正在移動中，更新平滑渲染座標
         if (pacman.dirX !== 0 || pacman.dirY !== 0) {
             pacman.progress += pacman.speed;
             pacman.screenX += pacman.dirX * pacman.speed;
@@ -479,6 +496,7 @@
             }
         }
 
+        // 剛好走完一整格 (20像素) 的處理
         if (pacman.progress >= TILE_SIZE - 0.001) {
             pacman.gridX += pacman.dirX;
             pacman.gridY += pacman.dirY;
@@ -486,6 +504,7 @@
             pacman.screenX = pacman.gridX * TILE_SIZE + TILE_SIZE/2;
             pacman.screenY = pacman.gridY * TILE_SIZE + TILE_SIZE/2;
 
+            // 吃豆子檢查
             for (let i = dots.length - 1; i >= 0; i--) {
                 if (dots[i].x === pacman.gridX && dots[i].y === pacman.gridY) {
                     if (dots[i].big) {
@@ -501,6 +520,7 @@
                 }
             }
 
+            // 本關豆子全部吃光
             if (dots.length === 0) {
                 isStageClearing = true;
                 gameOver = true;
@@ -524,6 +544,7 @@
             }
         }
 
+        // 小鬼移動更新
         ghosts.forEach(ghost => {
             let baseGhostSpeed = 0.8 + Math.min(5, stage - 1) * 0.06;
             let gSpeed = frightenTimer > 0 ? (baseGhostSpeed * 0.55) : baseGhostSpeed; 
@@ -598,7 +619,7 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 依據關卡變換迷宮牆壁顏色，增加視覺變化
+        // 關卡主題色變化
         const colors = ['#0000d6', '#00aa00', '#d600d6', '#d66a00', '#00aaaa', '#aa5500', '#aa0000', '#5555ff', '#33aa33', '#e6b800'];
         ctx.fillStyle = colors[(stage - 1) % colors.length];
 
@@ -691,6 +712,7 @@
         if (gameOver || isStageClearing) return;
         pacman.nextDirX = vx;
         pacman.nextDirY = vy;
+        // 如果小精靈原本停著，按下按鈕能走就立刻朝該方向出發
         if (pacman.dirX === 0 && pacman.dirY === 0 && pacman.progress === 0) {
             if (!isWall(pacman.gridX + vx, pacman.gridY + vy)) {
                 pacman.dirX = vx;

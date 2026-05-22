@@ -2,10 +2,11 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>台灣 16 張麻將 </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>台灣 16 張麻將</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+        
         body {
             background-color: #166133; 
             color: #fff;
@@ -13,30 +14,44 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            /* 使用 dvh 確保動態扣除手機網址列與工具列 */
             height: 100vh;
+            height: 100dvh; 
             overflow: hidden;
+            position: relative;
         }
         
-        #header { background: rgba(0,0,0,0.5); padding: 6px; text-align: center; height: 50px; }
-        h2 { font-size: 15px; color: #ffeb3b; }
-        #msg { color: #fff; font-size: 13px; margin-top: 2px; min-height: 18px; }
+        #header { 
+            background: rgba(0,0,0,0.55); 
+            padding: 4px 6px; 
+            text-align: center; 
+            height: 54px; 
+            flex-shrink: 0;
+            z-index: 10;
+        }
+        h2 { font-size: 14px; color: #ffeb3b; }
+        #msg { color: #fff; font-size: 12px; margin-top: 2px; min-height: 16px; font-weight: bold; }
 
         #gameTable {
             flex: 1;
             display: flex;
             flex-direction: column;
+            justify-content: space-between;
             width: 100%;
             max-width: 480px;
             margin: 0 auto;
-            padding: 4px;
+            padding: 6px 4px;
             position: relative;
+            min-height: 0; /* 允許內部組件正確分配彈性高度 */
         }
 
         #npcArea { 
             display: flex; 
             justify-content: space-between; 
-            gap: 8px;
+            gap: 6px;
             width: 100%; 
+            flex-shrink: 0;
+            margin-top: 2px; /* 與上方提示字拉開安全距離 */
         }
         
         .npc-column {
@@ -44,65 +59,62 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             min-width: 0;
         }
 
         .npc-box {
-            background: rgba(0, 0, 0, 0.4); border: 1px solid #2c854c; padding: 6px 4px;
-            border-radius: 6px; text-align: center; width: 100%; font-size: 13px;
+            background: rgba(0, 0, 0, 0.4); border: 1px solid #2c854c; padding: 4px 2px;
+            border-radius: 6px; text-align: center; width: 100%; font-size: 12px;
             transition: all 0.3s ease;
         }
-        .npc-box.active { border-color: #ffeb3b; background: rgba(255,235,59,0.15); box-shadow: 0 0 8px rgba(255,235,59,0.5); }
+        .npc-box.active { border-color: #ffeb3b; background: rgba(255,235,59,0.15); box-shadow: 0 0 6px rgba(255,235,59,0.5); }
         
         .npc-box.ting-danger { 
             background: rgba(156, 39, 176, 0.4) !important; 
             border: 2px solid #ab47bc !important; 
-            box-shadow: 0 0 12px rgba(171, 71, 188, 0.6) !important;
+            box-shadow: 0 0 10px rgba(171, 71, 188, 0.6) !important;
         }
         .npc-box.ting-danger.active {
             background: rgba(186, 104, 200, 0.5) !important;
             border-color: #ffeb3b !important;
-            box-shadow: 0 0 15px rgba(255, 235, 59, 0.6) !important;
+            box-shadow: 0 0 12px rgba(255, 235, 59, 0.6) !important;
         }
         
         .npc-action { 
             display: block;
-            margin-top: 4px;
-            padding: 2px 4px;
+            margin-top: 2px;
+            padding: 1px 2px;
             background: #424242;
             color: #ccc; 
-            font-size: 12px; 
+            font-size: 11px; 
             font-weight: bold; 
             border-radius: 4px;
-            min-height: 20px;
-            transition: all 0.2s;
+            min-height: 18px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-        .npc-action.act-eat { background: #2e7d32; color: #fff; box-shadow: 0 0 5px #2e7d32; animation: pop 0.3s; }
-        .npc-action.act-pong { background: #e65100; color: #fff; box-shadow: 0 0 5px #e65100; animation: pop 0.3s; }
-        .npc-action.act-gang { background: #0288d1; color: #fff; box-shadow: 0 0 5px #0288d1; animation: pop 0.3s; }
-        .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 8px #e91e63; animation: pop 0.4s; }
+        .npc-action.act-eat { background: #2e7d32; color: #fff; box-shadow: 0 0 4px #2e7d32; }
+        .npc-action.act-pong { background: #e65100; color: #fff; box-shadow: 0 0 4px #e65100; }
+        .npc-action.act-gang { background: #0288d1; color: #fff; box-shadow: 0 0 4px #0288d1; }
+        .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 6px #e91e63; }
         .npc-action.act-discard { background: rgba(255,255,255,0.2); color: #fff; }
-
-        @keyframes pop {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.15); }
-            100% { transform: scale(1); }
-        }
 
         .discard-pool {
             display: flex;
-            gap: 4px 3px;
+            gap: 3px 2px;
             flex-wrap: wrap;
             background: rgba(0,0,0,0.15);
             border-radius: 4px;
-            padding: 4px;
+            padding: 3px;
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .npc-pool {
             width: 100%;
-            height: 90px;
+            height: 85px;
             align-content: start;
         }
 
@@ -112,23 +124,26 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            margin: 10px 0;
+            margin: 4px 0;
+            min-height: 60px;
         }
         #playerPool { 
             width: 100%; 
             max-width: 320px; 
-            height: 75px; 
+            height: 70px; 
             align-content: start; 
         }
 
         #actionPanel {
-            display: none; justify-content: center; gap: 8px; background: rgba(0,0,0,0.85);
-            padding: 10px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            border-radius: 6px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            display: none; justify-content: center; gap: 8px; background: rgba(0,0,0,0.9);
+            padding: 12px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 8px; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            width: 85%; max-width: 340px;
         }
         .action-btn {
-            background: #f57c00; border: none; color: white; padding: 6px 14px;
-            font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;
+            flex: 1; background: #f57c00; border: none; color: white; padding: 8px 0;
+            font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer; display: none;
+            text-align: center;
         }
         .action-btn.win { background: #d32f2f; display: none; }
         .action-btn.ting { background: #ab47bc; display: none; }
@@ -136,91 +151,105 @@
         .action-btn.pass { background: #757575; display: block; }
 
         .restart-btn {
-            background: #4caf50; border: none; color: white; padding: 8px 18px;
-            font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;
+            width: 100%; background: #4caf50; border: none; color: white; padding: 10px 0;
+            font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; display: none;
         }
 
-        #playerArea { background: rgba(0, 0, 0, 0.4); padding: 6px 4px 12px 4px; border-top: 1px solid #2c854c; }
-        #deckInfo { text-align: center; font-size: 11px; color: #a5d6a7; margin-bottom: 4px; }
+        /* 玩家底座區域：強制不縮水，並加入底部安全區防海苔條切牌 */
+        #playerArea { 
+            background: rgba(0, 0, 0, 0.45); 
+            padding: 4px 4px calc(10px + window.safe-area-inset-bottom) 4px; 
+            border-top: 1px solid #2c854c;
+            flex-shrink: 0; 
+            width: 100%;
+        }
+        #deckInfo { text-align: center; font-size: 11px; color: #a5d6a7; margin-bottom: 3px; }
         
-        .player-board { display: flex; flex-direction: column; gap: 6px; width: 100%; align-items: center; }
-        #meldsArea { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; width: 100%; min-height: 32px; }
+        .player-board { display: flex; flex-direction: column; gap: 4px; width: 100%; align-items: center; }
+        
+        /* 吃碰副露區：強制不壓縮高度 */
+        #meldsArea { 
+            display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; width: 100%; 
+            min-height: 30px; flex-shrink: 0; 
+        }
         .meld-group { display: flex; gap: 1px; background: rgba(0,0,0,0.2); padding: 1px; border-radius: 2px; }
-        #hand { display: flex; justify-content: center; gap: 2px; width: 100%; flex-wrap: wrap; }
+        
+        /* 手牌區：強制不壓縮高度，確保二排不會被隱形切斷 */
+        #hand { 
+            display: flex; justify-content: center; gap: 2px; width: 100%; flex-wrap: wrap; 
+            flex-shrink: 0; min-height: 82px; 
+        }
 
+        /* 調整手機版麻將牌面尺寸比例 */
         .tile {
             background: linear-gradient(135deg, #ffffff 0%, #fcfcf4 100%);
             color: #000;
-            width: 38px;
-            height: 52px;
+            width: 36px;
+            height: 48px;
             border-radius: 4px 4px 3px 3px;
             border: 1px solid #ccc;
             box-shadow: 
                 0 1px 0 #bbb,
                 0 2px 0 #1b5e20, 
                 0 3px 0 #1b5e20, 
-                0 4px 1px rgba(0,0,0,0.4);
+                0 3px 1px rgba(0,0,0,0.4);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            font-size: 34px; 
+            font-size: 32px; 
             line-height: 1;
             position: relative;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         
         .tile.new-drawn { 
-            margin-left: 14px; 
+            margin-left: 10px; 
             border-color: #ff9800; 
             box-shadow: 
-                0 0 5px #ff9800,
+                0 0 4px #ff9800,
                 0 1px 0 #ff9800,
                 0 2px 0 #e65100, 
                 0 3px 0 #e65100, 
-                0 4px 2px rgba(0,0,0,0.4); 
+                0 3px 1px rgba(0,0,0,0.4); 
         }
         .tile.locked { cursor: not-allowed; opacity: 0.6; background: #e0e0e0; border-color: #999; box-shadow: none; }
 
         .tile .ting-tag {
             position: absolute; top: -5px; right: -4px; background: #ab47bc; color: #fff;
             font-size: 9px; font-weight: bold; padding: 0 2px; border-radius: 3px; z-index: 10;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
 
         .meld-group .tile { 
-            width: 26px; 
-            height: 36px; 
-            font-size: 24px; 
+            width: 24px; 
+            height: 32px; 
+            font-size: 22px; 
             box-shadow: 
                 0 1px 0 #ccc,
                 0 2px 0 #1b5e20,
-                0 3px 1px rgba(0,0,0,0.3); 
-            margin-bottom: 2px;
+                0 2px 1px rgba(0,0,0,0.3); 
+            margin-bottom: 1px;
         }
 
         .pool-tile {
             background: linear-gradient(135deg, #fcfcf9 0%, #f5f5ee 100%);
             color: #000;
-            width: 24px; 
-            height: 33px; 
+            width: 22px; 
+            height: 30px; 
             border-radius: 3px 3px 2px 2px;
             border: 1px solid #ccc; 
             box-shadow: 
                 0 1px 0 #bbb,
-                0 2px 0 #1b5e20,
-                0 2px 1px rgba(0,0,0,0.3);
+                0 1px 0 #1b5e20,
+                0 1px 1px rgba(0,0,0,0.3);
             display: flex; justify-content: center; align-items: center;
-            font-size: 22px;
-            margin-bottom: 2px;
+            font-size: 20px;
+            margin-bottom: 1px;
         }
         .pool-tile.last-shot { 
             border-color: #ffeb3b; 
             background: #fffde7;
-            box-shadow: 
-                0 0 5px #ffeb3b,
-                0 1px 0 #ffeb3b,
-                0 2px 0 #e65100;
+            box-shadow: 0 0 4px #ffeb3b, 0 1px 0 #ffeb3b, 0 1px 0 #e65100;
         }
     </style>
 </head>
@@ -279,7 +308,7 @@
     const tileUnicode = {
         '1萬': '🀇', '2萬': '🀈', '3萬': '🀉', '4萬': '🀊', '5萬': '🀋', '6萬': '🀌', '7萬': '🀍', '8萬': '🀎', '9萬': '🀏',
         '1筒': '🀙', '2筒': '🀚', '3筒': '🀛', '4筒': '🀜', '5筒': '🀝', '6筒': '🀞', '7筒': '🀟', '8筒': '🀠', '9筒': '🀡',
-        '1條': '🀐', '2條': '🀑', '3條': '🀒', '4條': '🀓', '5條': '🀔', '6條': '🀕', '7條': '🀖', '8條': '🀗', '9條': '🀘',
+        '1條': '🀐', '2條': '🀑', '3條': '🀒', '4條': '🀓', '5條': '🀔', '6條': '🀕', '7條': '🀖', '8條': '🀗', '9條': '',
         '東': '🀀', '南': '🀁', '西': '🀂', '北': '🀃', '中': '🀄', '發': '🀅', '白': '🀆'
     };
 
@@ -451,7 +480,7 @@
                     renderPlayerHand(p.hand.length - 1); 
                 } else {
                     document.getElementById('actionPanel').style.display = 'none';
-                    document.getElementById('msg').innerText = `【聽牌自動摸打】自動打出摸到的 ${newTile.name}`;
+                    document.getElementById('msg').innerText = `【自動摸打】打出摸到的 ${newTile.name}`;
                     renderPlayerHand(p.hand.length - 1); 
                     setTimeout(() => { autoDiscardNewDrawn(); }, 1200); 
                 }
@@ -483,7 +512,7 @@
                 
                 document.getElementById('btnGang').style.display = canGang ? 'block' : 'none';
                 document.getElementById('btnPass').style.display = 'block';
-                document.getElementById('msg').innerText = `💡 請先決定是否要【${canTing?'聽牌📢':''}】或【過】（此時手牌防呆鎖定）`;
+                document.getElementById('msg').innerText = `💡 請先決定是否要【${canTing?'聽牌📢':''}】或【過】`;
             } else {
                 document.getElementById('actionPanel').style.display = 'none';
                 document.getElementById('msg').innerText = `【你的回合】請點選一張牌打出`;
@@ -499,7 +528,7 @@
                 sortHand(p.hand);
 
                 if (checkHu(p.hand)) {
-                    endGame(`💥💥 ${p.name} 自摸胡牌了！電腦贏了！`);
+                    endGame(`💥💥 ${p.name} 自摸胡牌了！`);
                     return;
                 }
                 
@@ -519,7 +548,7 @@
                         p.isTingLocked = true;
                         document.getElementById(p.boxId).classList.add('ting-danger');
                         setNpcStatusStyle(p, `宣告聽牌 📢`, `act-ting`);
-                        document.getElementById('msg').innerText = `📢 ${p.name} 宣告聽牌！底色已鎖定危險紫色！`;
+                        document.getElementById('msg').innerText = `📢 ${p.name} 宣告聽牌！底色已變更！`;
                         setTimeout(() => { npcDiscard(p, tingDiscardIdx); }, 1800); 
                     } else {
                         npcAIPlay(p);
@@ -669,7 +698,7 @@
                     document.getElementById('btnWin').innerText = "胡牌 🀄"; 
                     document.getElementById('btnWin').style.display = 'block';
                     document.getElementById('btnPass').style.display = 'block';
-                    document.getElementById('msg').innerText = `🔥 電腦放銃 ${tile.name}！快點擊【胡牌 🀄】！`;
+                    document.getElementById('msg').innerText = `🔥 放銃 ${tile.name}！請選擇操作`;
                     return; 
                 } else {
                     endGame(`🎉 ${checker.name} 胡牌了！抓到 ${players[shooterIndex].name} 放銃！`);
@@ -678,13 +707,12 @@
             }
         }
 
-        // 2. 碰牌與明槓檢查 (【核心 Bug 修復點】：加入同名比對驗證！)
+        // 2. 碰牌與明槓檢查
         for (let i = 1; i <= 3; i++) {
             let nextIdx = (shooterIndex + i) % 4;
             let checker = players[nextIdx];
             if (checker.isTingLocked) continue; 
 
-            // 【修復核心】：不但算數量，還必須完全等於被打出的那張牌的名稱！
             let matchCount = checker.hand.filter(t => t.name === tile.name).length;
 
             if (!checker.isNPC) {
@@ -710,15 +738,13 @@
                     document.getElementById('btnPong').style.display = canPong ? 'block' : 'none';
                     document.getElementById('btnGang').style.display = canGang ? 'block' : 'none';
                     document.getElementById('btnPass').style.display = 'block';
-                    document.getElementById('msg').innerText = `💡 ${players[shooterIndex].name} 打出 ${tile.name}，您可以進行操作`;
+                    document.getElementById('msg').innerText = `💡 ${players[shooterIndex].name} 打出 ${tile.name}`;
                     return;
                 }
             } else {
-                // 電腦攔截：同樣只有在「名字完全對上」且數量夠時，才可以碰或明槓
                 if (matchCount === 3) {
                     setNpcStatusStyle(checker, `明槓 🀄`, `act-gang`);
-                    document.getElementById('msg').innerText = `📢 ${checker.name} 攔截大喊：槓牌！`;
-                    
+                    document.getElementById('msg').innerText = `📢 ${checker.name} 槓牌！`;
                     pools[players[shooterIndex].name].pop();
                     renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
                     
@@ -740,16 +766,13 @@
                     return;
                 } else if (matchCount === 2) {
                     setNpcStatusStyle(checker, `碰 📢`, `act-pong`);
-                    document.getElementById('msg').innerText = `📢 ${checker.name} 攔截大喊：碰！`;
-                    
+                    document.getElementById('msg').innerText = `📢 ${checker.name} 碰牌！`;
                     pools[players[shooterIndex].name].pop();
                     renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
                     
-                    // 從手牌中移除完全對應名稱的兩張牌
                     for(let k=checker.hand.length-1; k>=0; k--) {
                         if(checker.hand[k].name === tile.name) checker.hand.splice(k,1);
                     }
-                    // 碰出來的組合必須是三張一模一樣的牌
                     checker.melds.push([tile, tile, tile]);
                     currentTurn = nextIdx;
                     
@@ -774,8 +797,7 @@
 
             if (eatGroup) {
                 setNpcStatusStyle(nextPlayer, `吃 🥢`, `act-eat`);
-                document.getElementById('msg').innerText = `🥢 下家 攔截了你打的 ${tile.name}，大喊：吃！`;
-                
+                document.getElementById('msg').innerText = `🥢 下家 吃了 ${tile.name}`;
                 pools[players[shooterIndex].name].pop();
                 renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
                 
@@ -806,7 +828,7 @@
                 isAwaitingTingChoice = false; 
                 isPlayerDeclinedTing = true;
                 playerHandTingData = Array(hand.length).fill(null);
-                document.getElementById('msg').innerText = `【你的回合】您選擇不聽牌。請挑選一張牌打出。`;
+                document.getElementById('msg').innerText = `【你的回合】不聽牌，請挑選一張牌打出`;
                 renderPlayerHand(hand.length - 1); 
                 return;
             }
@@ -828,7 +850,7 @@
 
         if (action === 'WIN') {
             let winWord = (currentTurn === 0) ? "自摸" : "胡牌";
-            endGame(`🎉🎉🎉 ${winWord}！你贏了！ 🎉🎉局結束。`);
+            endGame(`🎉🎉🎉 ${winWord}！你贏了！`);
             return;
         }
 
@@ -836,7 +858,7 @@
             isAwaitingTingChoice = false; 
             isPlayerTingModeActive = true; 
             document.getElementById('actionPanel').style.display = 'none';
-            document.getElementById('msg').innerText = `📢 請從發亮（標註「聽」）的牌中，挑選一張牌打出以確認鎖死聽牌！`;
+            document.getElementById('msg').innerText = `📢 請點擊有「聽」字的牌打出以鎖定聽牌！`;
             renderPlayerHand(hand.length - 1);
             return;
         }
@@ -887,12 +909,7 @@
                     document.getElementById('actionPanel').style.display = 'flex';
                     hideAllActionButtons();
                     if (canWinAfterGang) { document.getElementById('btnWin').innerText = "自摸 🀄"; document.getElementById('btnWin').style.display = 'block'; }
-                    
-                    if (canTingAfterGang) {
-                        document.getElementById('btnTing').style.display = 'block';
-                        isAwaitingTingChoice = true; 
-                    }
-                    
+                    if (canTingAfterGang) { document.getElementById('btnTing').style.display = 'block'; isAwaitingTingChoice = true; }
                     document.getElementById('btnGang').style.display = (activeGangOptions.length > 0) ? 'block' : 'none';
                     document.getElementById('btnPass').style.display = 'block';
                 }
@@ -939,7 +956,7 @@
         if (!isWaitingPlayerDiscard || isGameOver) return;
         
         if (isAwaitingTingChoice) {
-            document.getElementById('msg').innerText = `⚠️ 請先點擊【聽牌📢】或【過】，才能進行出牌！`;
+            document.getElementById('msg').innerText = `⚠️ 請先處理聽牌或過選單！`;
             return;
         }
 
@@ -950,7 +967,7 @@
 
         if (isPlayerTingModeActive) {
             if (!tingList) {
-                document.getElementById('msg').innerText = `❌ 這張牌打了無法聽牌！請選擇有標註「聽」的牌打出。`;
+                document.getElementById('msg').innerText = `❌ 這張牌打了無法聽牌！請選擇帶「聽」字的牌！`;
                 return;
             }
             
@@ -964,12 +981,12 @@
             pools["你"].push(discarded);
             isWaitingPlayerDiscard = false;
 
-            document.getElementById('msg').innerText = `📢 你已宣告聽牌！手牌鎖定進入自動摸打。`;
+            document.getElementById('msg').innerText = `📢 已宣告聽牌！進入自動摸打模式。`;
             renderPlayerHand();
             renderSinglePool("你", p.poolId);
 
             setTimeout(() => {
-                alert(`📢 您已宣告聽牌！\n本局聽牌組合為：[ ${tingTileNames} ]`);
+                alert(`📢 您已宣告聽牌！\n聽牌組合為：[ ${tingTileNames} ]`);
                 interceptSystem(discarded, 0); 
             }, 100);
             return;

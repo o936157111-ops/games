@@ -1432,18 +1432,23 @@
 
 
 
-    function animate() {
+let frameCount = 0; // 新增計數器
 
-        if (gameOver) return;
+function animate() {
+    if (gameOver) return;
 
+    // 每執行 2 次請求才更新一次邏輯，這等於強行把速度減半
+    frameCount++;
+    if (frameCount % 2 === 0) {
         update();
-
         draw();
-
-        animationId = requestAnimationFrame(animate);
-
+    } else {
+        // 雖然不更新邏輯，但為了畫面流暢，我們只重繪
+        draw();
     }
-
+    
+    animationId = requestAnimationFrame(animate);
+}
 
 
     function endGame() {

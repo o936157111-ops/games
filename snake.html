@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>貪食蛇 - 最終完美版</title>
+    <title>貪食蛇 - 最終嚴格佈局版</title>
     <style>
         html, body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
+            height: 100%; width: 100%;
+            margin: 0; padding: 0;
+            overflow: hidden; /* 徹底封鎖捲動 */
             background-color: #222;
             display: flex;
             justify-content: center;
@@ -16,15 +16,12 @@
         }
 
         .phone-container {
-            width: 90vw;
-            max-width: 400px;
-            /* 關鍵：設定高度為 95vh，同時確保內容不會溢出 */
-            height: 95vh;
-            max-height: 800px;
+            width: 90vw; max-width: 350px;
+            height: 90vh; max-height: 600px;
             background-color: #333;
             border: 6px solid #444;
-            border-radius: 25px;
-            padding: 15px;
+            border-radius: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -34,53 +31,40 @@
             width: 100%;
             aspect-ratio: 1 / 1;
             background-color: #8fa382;
-            border: 8px solid #111;
-            /* 讓遊戲區彈性縮放，但不要超過剩餘空間 */
-            flex: 1;
-            min-height: 0; 
+            border: 5px solid #111;
+            flex-shrink: 1; /* 空間不足時，遊戲框優先縮小 */
             overflow: hidden;
         }
 
         canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
 
         .control-area {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            width: 100%;
+            display: flex;
             gap: 10px;
-            /* 嚴格限制操作區高度 */
-            height: 100px;
-            flex-shrink: 0;
+            height: 80px; /* 強制控制區高度 */
+            flex-shrink: 0; /* 確保控制區不會被壓縮 */
         }
 
         .d-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
-            align-items: center;
+            gap: 2px;
+            width: 120px;
         }
 
         .d-btn {
-            background-color: #222;
-            color: #fff;
-            border: 3px solid #555;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            font-size: 16px;
+            background-color: #222; color: #fff;
+            border: 2px solid #555; border-radius: 50%;
+            width: 35px; height: 35px;
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 14px;
         }
 
         #startBtn {
-            background: #555;
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            height: 100%;
+            flex-grow: 1;
+            background: #555; border: none; border-radius: 10px;
+            color: white; font-weight: bold; cursor: pointer;
         }
     </style>
 </head>
@@ -90,7 +74,6 @@
     <div class="screen">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
-    
     <div class="control-area">
         <div class="d-pad">
             <button class="d-btn" style="grid-column: 2;" data-dir="UP">▲</button>
@@ -98,7 +81,7 @@
             <button class="d-btn" style="grid-column: 3; grid-row: 2;" data-dir="RIGHT">▶</button>
             <button class="d-btn" style="grid-column: 2; grid-row: 3;" data-dir="DOWN">▼</button>
         </div>
-        <button id="startBtn">START / PAUSE</button>
+        <button id="startBtn">START<br>PAUSE</button>
     </div>
 </div>
 

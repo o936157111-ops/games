@@ -2,386 +2,114 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>台灣 16 張麻將</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
-        
-        body {
-            background-color: #166133; 
-            color: #fff;
-            font-family: "Segoe UI Symbol", "Apple Symbols", "PingFang TC", "Microsoft JhengHei", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            height: 100vh;
-            height: 100dvh; 
-            overflow: hidden;
-            position: relative;
-        }
-        
-        #header { background: rgba(0,0,0,0.55); padding: 4px 6px; text-align: center; height: 54px; flex-shrink: 0; z-index: 10; }
-        h2 { font-size: 14px; color: #ffeb3b; }
-        #msg { color: #fff; font-size: 12px; margin-top: 2px; min-height: 16px; font-weight: bold; }
-
-        #gameTable {
-            flex: 1; display: flex; flex-direction: column; justify-content: space-between;
-            width: 100%; max-width: 480px; margin: 0 auto; padding: 6px 4px; position: relative; min-height: 0; 
-        }
-
-        #npcArea { display: flex; justify-content: space-between; gap: 6px; width: 100%; flex-shrink: 0; margin-top: 2px; }
-        .npc-column { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; }
-        .npc-box { background: rgba(0, 0, 0, 0.4); border: 1px solid #2c854c; padding: 4px 2px; border-radius: 6px; text-align: center; width: 100%; font-size: 11px; transition: all 0.3s ease; }
-        .npc-box.active { border-color: #ffeb3b; background: rgba(255,235,59,0.15); box-shadow: 0 0 6px rgba(255,235,59,0.5); }
-        .npc-box.ting-danger { background: rgba(156, 39, 176, 0.4) !important; border: 2px solid #ab47bc !important; box-shadow: 0 0 10px rgba(171, 71, 188, 0.6) !important; }
-        .npc-avatar-wrapper { display: flex; align-items: center; justify-content: center; gap: 4px; margin-bottom: 2px; }
-        .npc-avatar { width: 24px; height: 24px; background: rgba(255, 255, 255, 0.15); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: inset 0 0 4px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); }
-        .npc-name { font-weight: bold; color: #e0e0e0; }
-        .npc-action { display: block; margin-top: 2px; padding: 1px 2px; background: #424242; color: #ccc; font-size: 11px; font-weight: bold; border-radius: 4px; min-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .npc-action.act-eat { background: #2e7d32; color: #fff; box-shadow: 0 0 4px #2e7d32; }
-        .npc-action.act-pong { background: #e65100; color: #fff; box-shadow: 0 0 4px #e65100; }
-        .npc-action.act-gang { background: #0288d1; color: #fff; box-shadow: 0 0 4px #0288d1; }
-        .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 6px #e91e63; }
-        .npc-action.act-discard { background: rgba(255,255,255,0.2); color: #fff; }
-
-        .npc-melds-bar { width: 100%; min-height: 15px; margin-top: 2px; font-size: 10px; color: #a5d6a7; text-align: center; word-break: break-all; background: rgba(0,0,0,0.2); border-radius: 3px; padding: 1px 2px; font-family: monospace; }
-        .discard-pool { display: flex; gap: 3px 2px; flex-wrap: wrap; background: rgba(0,0,0,0.15); border-radius: 4px; padding: 3px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-        .npc-pool { width: 100%; height: 85px; align-content: start; }
-        #centerArea { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 4px 0; min-height: 60px; }
-        #playerPool { width: 100%; max-width: 320px; height: 70px; align-content: start; }
-
-        #actionPanel { display: none; justify-content: center; gap: 8px; background: rgba(0,0,0,0.9); padding: 12px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); border-radius: 8px; z-index: 100; box-shadow: 0 4px 15px rgba(0,0,0,0.6); width: 85%; max-width: 340px; flex-direction: column; }
-        .action-row { display: flex; gap: 8px; width: 100%; justify-content: center; }
-        .action-btn { flex: 1; background: #f57c00; border: none; color: white; padding: 8px 0; font-size: 14px; font-weight: bold; border-radius: 5px; cursor: pointer; display: none; text-align: center; }
-        .action-btn.win { background: #d32f2f; display: none; }
-        .action-btn.ting { background: #ab47bc; display: none; }
-        .action-btn.gang { background: #0288d1; display: none; }
-        .action-btn.pass { background: #757575; display: block; }
-        #eatSubPanel { display: none; flex-direction: column; gap: 6px; width: 100%; margin-top: 6px; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 6px; }
-        .eat-opt-btn { background: #2e7d32; border: 1px solid #4caf50; color: white; padding: 6px; font-size: 13px; font-weight: bold; border-radius: 4px; cursor: pointer; text-align: center; }
-        .restart-btn { width: 100%; background: #4caf50; border: none; color: white; padding: 10px 0; font-size: 15px; font-weight: bold; border-radius: 5px; cursor: pointer; display: none; }
-
-        #playerArea { background: rgba(0, 0, 0, 0.45); padding: 4px 4px 10px 4px; border-top: 1px solid #2c854c; flex-shrink: 0; width: 100%; }
-        #deckInfo { text-align: center; font-size: 11px; color: #a5d6a7; margin-bottom: 3px; }
-        .player-board { display: flex; flex-direction: column; gap: 4px; width: 100%; align-items: center; }
-        #meldsArea { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; width: 100%; min-height: 30px; flex-shrink: 0; }
-        .meld-group { display: flex; gap: 1px; background: rgba(0,0,0,0.2); padding: 1px; border-radius: 2px; }
-        #hand { display: flex; justify-content: center; gap: 2px; width: 100%; flex-wrap: wrap; flex-shrink: 0; min-height: 82px; }
-
-        .tile { background: linear-gradient(135deg, #ffffff 0%, #fcfcf4 100%); color: #000; width: 36px; height: 48px; border-radius: 4px 4px 3px 3px; border: 1px solid #ccc; box-shadow: 0 1px 0 #bbb, 0 2px 0 #1b5e20, 0 3px 0 #1b5e20, 0 3px 1px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 32px; position: relative; margin-bottom: 3px; }
-        .tile.new-drawn { margin-left: 10px; border-color: #ff9800; box-shadow: 0 0 4px #ff9800, 0 1px 0 #ff9800, 0 2px 0 #e65100, 0 3px 0 #e65100, 0 3px 1px rgba(0,0,0,0.4); }
-        .tile.locked { cursor: not-allowed; opacity: 0.6; background: #e0e0e0; border-color: #999; box-shadow: none; }
-        .tile .ting-tag { position: absolute; top: -5px; right: -4px; background: #ab47bc; color: #fff; font-size: 9px; font-weight: bold; padding: 0 2px; border-radius: 3px; z-index: 10; }
-        .meld-group .tile { width: 24px; height: 32px; font-size: 22px; box-shadow: 0 1px 0 #ccc, 0 2px 0 #1b5e20, 0 2px 1px rgba(0,0,0,0.3); margin-bottom: 1px; }
-        .pool-tile { background: linear-gradient(135deg, #fcfcf9 0%, #f5f5ee 100%); color: #000; width: 22px; height: 30px; border-radius: 3px 3px 2px 2px; border: 1px solid #ccc; box-shadow: 0 1px 0 #bbb, 0 1px 0 #1b5e20, 0 1px 1px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; font-size: 20px; margin-bottom: 1px; }
-        .pool-tile.last-shot { border-color: #ffeb3b; background: #fffde7; box-shadow: 0 0 4px #ffeb3b, 0 1px 0 #ffeb3b, 0 1px 0 #e65100; }
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body { background-color: #166133; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        #header { background: rgba(0,0,0,0.55); padding: 10px; text-align: center; }
+        #gameTable { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        #actionPanel { display: none; background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; z-index: 100; flex-direction: column; gap: 10px; }
+        .action-row { display: flex; gap: 10px; }
+        button { padding: 10px 20px; cursor: pointer; }
+        #hand { display: flex; gap: 5px; margin-top: 20px; }
+        .tile { background: #fff; color: #000; padding: 10px; border-radius: 5px; cursor: pointer; border: 1px solid #ccc; }
+        .meld-group { display: flex; border: 1px solid #fff; margin: 5px; }
+        .meld-group .tile { background: #eee; }
     </style>
 </head>
 <body>
 
-    <div id="header">
-        <h2>台灣 16 張麻將</h2>
-        <div id="msg">正在初始化牌局...</div>
+<div id="header"><h2>台灣 16 張麻將</h2><div id="msg">遊戲開始</div></div>
+<div id="gameTable">
+    <div id="actionPanel">
+        <div class="action-row" id="actionBtns"></div>
+        <div id="eatSubPanel" style="display:none;"></div>
     </div>
-
-    <div id="gameTable">
-        <div id="npcArea">
-            <div class="npc-column"><div class="npc-box" id="npc1Box"><div class="npc-avatar-wrapper"><div class="npc-avatar">👧</div><div class="npc-name">下家</div></div><span class="npc-action" id="npc1Act">-</span><div class="npc-melds-bar" id="npc1MeldsBar">無落地</div></div><div class="discard-pool npc-pool" id="rightPool"></div></div>
-            <div class="npc-column"><div class="npc-box" id="npc2Box"><div class="npc-avatar-wrapper"><div class="npc-avatar">🧔</div><div class="npc-name">對家</div></div><span class="npc-action" id="npc2Act">-</span><div class="npc-melds-bar" id="npc2MeldsBar">無落地</div></div><div class="discard-pool npc-pool" id="topPool"></div></div>
-            <div class="npc-column"><div class="npc-box" id="npc3Box"><div class="npc-avatar-wrapper"><div class="npc-avatar">👵</div><div class="npc-name">上家</div></div><span class="npc-action" id="npc3Act">-</span><div class="npc-melds-bar" id="npc3MeldsBar">無落地</div></div><div class="discard-pool npc-pool" id="leftPool"></div></div>
-        </div>
-        <div id="centerArea"><div class="discard-pool" id="playerPool"></div></div>
-        <div id="actionPanel">
-            <div class="action-row">
-                <button class="action-btn win" id="btnWin" onclick="actionResponse('WIN')">胡牌 🀄</button>
-                <button class="action-btn ting" id="btnTing" onclick="actionResponse('TING_CLICK')">聽牌 📢</button>
-                <button class="action-btn" id="btnEat" onclick="actionResponse('EAT_CLICK')">吃</button>
-                <button class="action-btn" id="btnPong" onclick="actionResponse('PONG')">碰</button>
-                <button class="action-btn gang" id="btnGang" onclick="actionResponse('GANG')">槓牌 🀄</button>
-                <button class="action-btn pass" id="btnPass" onclick="actionResponse('PASS')">過</button>
-            </div>
-            <div id="eatSubPanel"></div>
-            <button class="restart-btn" id="btnRestart" onclick="startGame()">再玩一局 🀄</button>
-        </div>
-    </div>
-
-    <div id="playerArea">
-        <div id="deckInfo">🀫 剩餘牌數: <span id="deckCount">0</span> 張</div>
-        <div class="player-board"><div id="meldsArea"></div><div id="hand"></div></div>
-    </div>
+    <div id="meldsArea" style="display:flex;"></div>
+    <div id="hand"></div>
+</div>
 
 <script>
     const suits = ['萬', '筒', '條'];
-    const suitOrder = { '萬':1, '筒':2, '條':3, '字':4 };
-    const tileUnicode = { '1萬': '🀇', '2萬': '🀈', '3萬': '🀉', '4萬': '🀊', '5萬': '🀋', '6萬': '🀌', '7萬': '🀍', '8萬': '🀎', '9萬': '🀏', '1筒': '🀙', '2筒': '🀚', '3筒': '🀛', '4筒': '🀜', '5筒': '🀝', '6筒': '🀞', '7筒': '🀟', '8筒': '🀠', '9筒': '🀡', '1條': '🀐', '2條': '🀑', '3條': '🀒', '4條': '🀓', '5條': '🀔', '6條': '🀕', '7條': '🀖', '8條': '🀗', '9條': '🀘', '東': '🀀\uFE0E', '南': '🀁\uFE0E', '西': '🀂\uFE0E', '北': '🀃\uFE0E', '中': '🀄\uFE0E', '發': '🀅\uFE0E', '白': '🀆\uFE0E' };
-    const allTileNames = [];
-    suits.forEach(s => { for(let i=1; i<=9; i++) allTileNames.push(i+s); });
-    ['東', '南', '西', '北', '中', '發', '白'].forEach(h => allTileNames.push(h));
+    const tileUnicode = {'1萬':'🀇','2萬':'🀈','3萬':'🀉','4萬':'🀊','5萬':'🀋','6萬':'🀌','7萬':'🀍','8萬':'🀎','9萬':'🀏','1筒':'🀙','2筒':'🀚','3筒':'🀛','4筒':'🀜','5筒':'🀝','6筒':'🀞','7筒':'🀟','8筒':'🀠','9筒':'🀡','1條':'🀐','2條':'🀑','3條':'🀒','4條':'🀓','5條':'🀔','6條':'🀕','7條':'🀖','8條':'🀗','9條':'🀘','東':'🀀','南':'🀁','西':'🀂','北':'🀃','中':'🀄','發':'🀅','白':'🀆'};
+    
+    let deck = [], players = [{name:"你", hand:[], melds:[]}, {name:"下家", hand:[], melds:[]}, {name:"對家", hand:[], melds:[]}, {name:"上家", hand:[], melds:[]}], 
+        currentTurn = 0, lastDiscardedTile = null, activeEatOptions = [];
 
-    let deck = [], pools = { "你": [], "下家": [], "對家": [], "上家": [] }, players = [
-        { name: "你", hand: [], melds: [], isNPC: false, poolId: "playerPool", isTingLocked: false }, 
-        { name: "下家", hand: [], melds: [], isNPC: true, boxId: "npc1Box", actId: "npc1Act", barId: "npc1MeldsBar", poolId: "rightPool", isTingLocked: false },
-        { name: "對家", hand: [], melds: [], isNPC: true, boxId: "npc2Box", actId: "npc2Act", barId: "npc2MeldsBar", poolId: "topPool", isTingLocked: false },
-        { name: "上家", hand: [], melds: [], isNPC: true, boxId: "npc3Box", actId: "npc3Act", barId: "npc3MeldsBar", poolId: "leftPool", isTingLocked: false }
-    ], currentTurn = 0, isWaitingPlayerDiscard = false, lastDiscardedTile = null, lastDiscarderPoolId = null, activeEatOptions = [], isGameOver = false, activeGangOptions = [], playerHandTingData = [], isPlayerTingModeActive = false, isPlayerDeclinedTing = false, isAwaitingTingChoice = false;
-
-    function initDeck() {
+    function initGame() {
         deck = [];
-        suits.forEach(s => { for(let i=1; i<=9; i++) for(let j=0; j<4; j++) deck.push({ name: i+s, suit: s, val: i, code: i+s }); });
-        ['東', '南', '西', '北', '中', '發', '白'].forEach(h => { for(let j=0; j<4; j++) deck.push({ name: h, suit: '字', val: 10 + ['東', '南', '西', '北', '中', '發', '白'].indexOf(h), code: h }); });
-        for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+        suits.forEach(s => { for(let i=1; i<=9; i++) for(let j=0; j<4; j++) deck.push({name: i+s, suit: s, val: i, code: i+s}); });
+        ['東','南','西','北','中','發','白'].forEach(h => { for(let j=0; j<4; j++) deck.push({name: h, suit: '字', val: 99, code: h}); });
+        deck.sort(() => Math.random() - 0.5);
+        players.forEach(p => { p.hand = []; for(let i=0; i<16; i++) p.hand.push(deck.pop()); p.hand.sort((a,b) => a.val - b.val); });
+        render();
     }
 
-    function sortHand(hand) { hand.sort((a, b) => { if (suitOrder[a.suit] !== suitOrder[b.suit]) return suitOrder[a.suit] - suitOrder[b.suit]; return a.val - b.val; }); }
-
-    function startGame() {
-        isGameOver = false; isPlayerTingModeActive = false; isPlayerDeclinedTing = false; isAwaitingTingChoice = false; playerHandTingData = []; lastDiscardedTile = null; lastDiscarderPoolId = null; activeGangOptions = []; activeEatOptions = [];
-        document.getElementById('actionPanel').style.display = 'none'; document.getElementById('eatSubPanel').style.display = 'none'; document.getElementById('btnRestart').style.display = 'none';
-        initDeck(); pools = { "你": [], "下家": [], "對家": [], "上家": [] };
-        players.forEach(p => { p.hand = []; p.melds = []; p.isTingLocked = false; if(p.isNPC) { setNpcStatusStyle(p, '-', 'act-discard'); document.getElementById(p.boxId).classList.remove('ting-danger'); document.getElementById(p.barId).innerText = "無落地"; document.getElementById(p.barId).style.color = "#a5d6a7"; } });
-        for(let i=0; i<16; i++) for(let p=0; p<4; p++) players[p].hand.push(deck.pop());
-        players.forEach(p => sortHand(p.hand));
-        updateUI(); currentTurn = 0; startTurn();
-    }
-
-    function setNpcStatusStyle(npc, text, className) { const span = document.getElementById(npc.actId); if(!span) return; span.innerText = text; span.className = "npc-action " + className; }
-
-    function renderNpcMeldsText(npc) {
-        const bar = document.getElementById(npc.barId); if (!bar) return;
-        if (npc.melds.length === 0) { bar.innerText = "無落地"; bar.style.color = "#a5d6a7"; return; }
-        bar.innerText = npc.melds.map(m => `[${m.map(t=>t.name).join('')}]`).join(' ');
-        bar.style.color = (npc.melds.length >= 3) ? "#ff9800" : "#fff";
-    }
-
-    function updateTingStatus() {
-        let hand = players[0].hand; playerHandTingData = Array(hand.length).fill(null);
-        if (players[0].isTingLocked || isPlayerDeclinedTing || hand.length % 3 !== 2) return false;
-        let found = false;
-        for (let i = 0; i < hand.length; i++) {
-            let tempHand = [...hand]; tempHand.splice(i, 1); let tingList = [];
-            for (let testTileName of allTileNames) {
-                let testHand = [...tempHand, { name: testTileName, suit: testTileName.includes('萬')?'萬':testTileName.includes('筒')?'筒':testTileName.includes('條')?'條':'字', val: parseInt(testTileName)||10 }];
-                if (checkHu(testHand)) tingList.push(testTileName);
-            }
-            if (tingList.length > 0) { playerHandTingData[i] = tingList; found = true; }
-        }
-        return found;
-    }
-
-    function checkNpcTingAvailable(npc) {
-        if (npc.isTingLocked || npc.hand.length % 3 !== 2) return null;
-        for (let i = 0; i < npc.hand.length; i++) {
-            let tempHand = [...npc.hand]; tempHand.splice(i, 1);
-            for (let testTileName of allTileNames) {
-                let testHand = [...tempHand, { name: testTileName, suit: testTileName.includes('萬')?'萬':testTileName.includes('筒')?'筒':testTileName.includes('條')?'條':'字', val: parseInt(testTileName)||10 }];
-                if (checkHu(testHand)) return i;
-            }
-        }
-        return null;
-    }
-
-    function startTurn() {
-        if (isGameOver) return; updateTurnHighlight(); document.getElementById('deckCount').innerText = deck.length;
-        if (deck.length === 0) { endGame("流局！牌抓完了。"); return; }
-        let p = players[currentTurn];
-        if (!p.isNPC) {
-            const newTile = deck.pop(); p.hand.push(newTile); isWaitingPlayerDiscard = true; isAwaitingTingChoice = false; 
-            let canWin = checkHu(p.hand);
-            if (p.isTingLocked) {
-                if (canWin) { document.getElementById('actionPanel').style.display = 'flex'; hideAllActionButtons(); document.getElementById('btnWin').innerText = "自摸 🀄"; document.getElementById('btnWin').style.display = 'block'; document.getElementById('msg').innerText = `✨✨ 聽牌自摸！！！`; renderPlayerHand(p.hand.length - 1); }
-                else { document.getElementById('msg').innerText = `【自動摸打】`; renderPlayerHand(p.hand.length - 1); setTimeout(autoDiscardNewDrawn, 1200); }
+    // 核心修正：嚴格的吃牌邏輯判斷
+    function interceptSystem(tile, shooterIdx) {
+        if (shooterIdx === 3 && tile.suit !== '字') { // 只有上家打出萬筒條才能吃
+            let v = tile.val, s = tile.suit, hand = players[0].hand;
+            let has = (val) => hand.find(t => t.suit === s && t.val === val);
+            
+            activeEatOptions = [];
+            if (v >= 3 && has(v-2) && has(v-1)) activeEatOptions.push([v-2, v-1]);
+            if (v >= 2 && v <= 8 && has(v-1) && has(v+1)) activeEatOptions.push([v-1, v+1]);
+            if (v <= 7 && has(v+1) && has(v+2)) activeEatOptions.push([v+1, v+2]);
+            
+            if (activeEatOptions.length > 0) {
+                showActionPanel(['吃', '過']);
                 return;
             }
-            let canTing = !isPlayerDeclinedTing && updateTingStatus(); checkSelfGangOptions(p);
-            if (canWin || canTing || activeGangOptions.length > 0) {
-                document.getElementById('actionPanel').style.display = 'flex'; hideAllActionButtons(); document.getElementById('eatSubPanel').style.display = 'none';
-                if (canWin) { document.getElementById('btnWin').innerText = "自摸 🀄"; document.getElementById('btnWin').style.display = 'block'; }
-                if (canTing) { document.getElementById('btnTing').style.display = 'block'; isAwaitingTingChoice = true; }
-                document.getElementById('btnGang').style.display = (activeGangOptions.length > 0) ? 'block' : 'none'; document.getElementById('btnPass').style.display = 'block';
-                document.getElementById('msg').innerText = `💡 請選擇操作`;
-            } else document.getElementById('msg').innerText = `【你的回合】請打出一張牌`;
-            renderPlayerHand(p.hand.length - 1);
-        } else {
-            document.getElementById('msg').innerText = `${p.name} 摸牌中...`;
-            setTimeout(() => {
-                if (isGameOver) return; const newTile = deck.pop(); p.hand.push(newTile); sortHand(p.hand);
-                if (checkHu(p.hand)) { endGame(`💥💥 ${p.name} 自摸！`); return; }
-                if (p.isTingLocked) npcDiscard(p, p.hand.indexOf(newTile) === -1 ? p.hand.length-1 : p.hand.indexOf(newTile));
-                else { let opt = checkNpcSelfGang(p); if(opt) executeNpcGang(p, opt); else { let idx = checkNpcTingAvailable(p); if(idx !== null) { p.isTingLocked = true; document.getElementById(p.boxId).classList.add('ting-danger'); setNpcStatusStyle(p, `宣告聽牌`, `act-ting`); setTimeout(() => npcDiscard(p, idx), 1000); } else npcAIPlay(p); } }
-            }, 1000);
         }
-    }
-
-    function autoDiscardNewDrawn() {
-        if (!isWaitingPlayerDiscard || isGameOver) return;
-        let p = players[0], discarded = p.hand.splice(p.hand.length-1, 1)[0];
-        lastDiscardedTile = discarded; lastDiscarderPoolId = p.poolId; pools["你"].push(discarded); isWaitingPlayerDiscard = false;
-        renderPlayerHand(); renderSinglePool("你", p.poolId); setTimeout(() => interceptSystem(discarded, 0), 50);
-    }
-
-    function checkSelfGangOptions(p) {
-        activeGangOptions = [];
-        let counts = {}; p.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
-        for (let name in counts) if (counts[name] === 4) activeGangOptions.push({ type: 'AN_GANG', name: name });
-        p.hand.forEach(t => { if (p.melds.some(m => m.length === 3 && m[0].name === t.name)) if (!activeGangOptions.some(o => o.name === t.name)) activeGangOptions.push({ type: 'JIA_GANG', name: t.name }); });
-    }
-
-    function checkNpcSelfGang(npc) {
-        let counts = {}; npc.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
-        for (let name in counts) if (counts[name] === 4) return { type: 'AN_GANG', name: name };
-        for (let t of npc.hand) if (npc.melds.some(m => m.length === 3 && m[0].name === t.name)) return { type: 'JIA_GANG', name: t.name };
-        return null;
-    }
-
-    function executeNpcGang(npc, opt) {
-        if (opt.type === 'AN_GANG') {
-            setNpcStatusStyle(npc, `暗槓`, `act-gang`);
-            let group = []; for(let i=npc.hand.length-1; i>=0; i--) if(npc.hand[i].name === opt.name) group.push(npc.hand.splice(i,1)[0]);
-            npc.melds.push(group);
-        } else {
-            setNpcStatusStyle(npc, `加槓`, `act-gang`);
-            let idx = npc.hand.findIndex(t => t.name === opt.name), t = npc.hand.splice(idx, 1)[0], m = npc.melds.find(m => m.length === 3 && m[0].name === opt.name);
-            if(m) m.push(t);
-        }
-        renderNpcMeldsText(npc);
-        setTimeout(() => { if(deck.length === 0) endGame("流局！"); else { const newTile = deck.pop(); npc.hand.push(newTile); sortHand(npc.hand); if(checkHu(npc.hand)) endGame(`${npc.name} 槓上開花！`); else npcAIPlay(npc); } }, 1000);
-    }
-
-    function npcAIPlay(npc) {
-        let score = npc.hand.map(t => {
-            if (t.suit === '字') return (npc.hand.filter(x => x.name === t.name).length >= 2) ? 10 : 0;
-            let same = npc.hand.filter(x => x.name === t.name).length, n1 = npc.hand.filter(x => x.suit === t.suit && Math.abs(x.val - t.val) === 1).length, n2 = npc.hand.filter(x => x.suit === t.suit && Math.abs(x.val - t.val) === 2).length;
-            return (same * 4) + (n1 * 2) + n2;
-        });
-        npcDiscard(npc, score.indexOf(Math.min(...score)));
-    }
-
-    function npcDiscard(npc, idx) {
-        const discarded = npc.hand.splice(idx, 1)[0]; sortHand(npc.hand);
-        lastDiscardedTile = discarded; lastDiscarderPoolId = npc.poolId; pools[npc.name].push(discarded);
-        setNpcStatusStyle(npc, `打出 ${discarded.name}`, `act-discard`);
-        renderSinglePool(npc.name, npc.poolId);
-        setTimeout(() => interceptSystem(discarded, currentTurn), 80);
-    }
-
-    function interceptSystem(tile, shooterIdx) {
-        if (isGameOver) return;
-        for (let i = 1; i <= 3; i++) {
-            let nextIdx = (shooterIdx + i) % 4, checker = players[nextIdx];
-            if (checkHu([...checker.hand, tile])) {
-                if (!checker.isNPC) { document.getElementById('actionPanel').style.display = 'flex'; hideAllActionButtons(); document.getElementById('btnWin').style.display = 'block'; document.getElementById('btnPass').style.display = 'block'; document.getElementById('msg').innerText = `🔥 放銃 ${tile.name}！胡牌？`; return; }
-                else { endGame(`${checker.name} 胡牌了！`); return; }
-            }
-        }
-        for (let i = 1; i <= 3; i++) {
-            let nextIdx = (shooterIdx + i) % 4, checker = players[nextIdx];
-            if (checker.isTingLocked) continue;
-            let matchCount = checker.hand.filter(t => t.name === tile.name).length;
-            if (!checker.isNPC) {
-                let canPong = (matchCount >= 2), canGang = (matchCount === 3), canEat = (shooterIdx === 3 && tile.suit !== '字');
-                if (canEat) {
-                    let v = tile.val, s = tile.suit, has = (val) => checker.hand.some(t => t.suit === s && t.val === val);
-                    activeEatOptions = []; if (has(v-2) && has(v-1)) activeEatOptions.push([v-2, v-1]); if (has(v-1) && has(v+1)) activeEatOptions.push([v-1, v+1]); if (has(v+1) && has(v+2)) activeEatOptions.push([v+1, v+2]);
-                }
-                if (activeEatOptions.length > 0 || canPong || canGang) {
-                    document.getElementById('actionPanel').style.display = 'flex'; hideAllActionButtons(); document.getElementById('btnEat').style.display = (activeEatOptions.length > 0) ? 'block' : 'none'; document.getElementById('btnPong').style.display = canPong ? 'block' : 'none'; document.getElementById('btnGang').style.display = canGang ? 'block' : 'none'; document.getElementById('btnPass').style.display = 'block'; return;
-                }
-            } else {
-                if (matchCount >= 2) {
-                    pools[players[shooterIdx].name].pop(); renderSinglePool(players[shooterIdx].name, players[shooterIdx].poolId);
-                    for(let k=checker.hand.length-1; k>=0; k--) if(checker.hand[k].name === tile.name) checker.hand.splice(k,1);
-                    checker.melds.push([tile, tile, tile]); renderNpcMeldsText(checker); currentTurn = nextIdx; setTimeout(() => npcAIPlay(checker), 1000); return;
-                }
-            }
-        }
-        setTimeout(nextTurn, 500);
+        document.getElementById('msg').innerText = "無人可吃";
     }
 
     function executeEat(opt) {
-        let hand = players[0].hand, tile = lastDiscardedTile, shooterObj = players[currentTurn];
-        document.getElementById('actionPanel').style.display = 'none'; pools[shooterObj.name].pop(); renderSinglePool(shooterObj.name, shooterObj.poolId);
+        let hand = players[0].hand, tile = lastDiscardedTile;
         let t1 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === opt[0]), 1)[0];
         let t2 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === opt[1]), 1)[0];
-        // 【修正】確保被吃的牌 tile 位於中間 [t1, tile, t2]
-        players[0].melds.push([t1, tile, t2]);
-        currentTurn = 0; isWaitingPlayerDiscard = true;
-        renderPlayerHand(); renderMelds();
+        players[0].melds.push([t1, tile, t2]); // 確保 tile 在中間
+        render();
     }
 
-    function actionResponse(action) {
-        let hand = players[0].hand, tile = lastDiscardedTile;
-        if (action === 'PASS') { document.getElementById('actionPanel').style.display = 'none'; document.getElementById('eatSubPanel').style.display = 'none'; setTimeout(nextTurn, 300); return; }
-        if (action === 'WIN') { endGame("你贏了！"); return; }
-        if (action === 'EAT_CLICK') {
-            if (activeEatOptions.length === 1) executeEat(activeEatOptions[0]);
-            else {
-                const subPanel = document.getElementById('eatSubPanel'); subPanel.innerHTML = ''; subPanel.style.display = 'flex';
-                activeEatOptions.forEach(opt => {
-                    const btn = document.createElement('button'); btn.className = 'eat-opt-btn'; btn.innerText = `用 ${opt[0]} + ${opt[1]} 吃`;
-                    btn.onclick = () => { subPanel.style.display = 'none'; executeEat(opt); }; subPanel.appendChild(btn);
-                });
-            }
-            return;
-        }
-        document.getElementById('actionPanel').style.display = 'none'; document.getElementById('eatSubPanel').style.display = 'none';
-        pools[players[currentTurn].name].pop(); renderSinglePool(players[currentTurn].name, players[currentTurn].poolId);
-        if (action === 'PONG') {
-            for(let i=0; i<2; i++) hand.splice(hand.findIndex(t => t.name === tile.name), 1);
-            players[0].melds.push([tile, tile, tile]); currentTurn = 0; isWaitingPlayerDiscard = true;
-        }
-        renderPlayerHand(); renderMelds();
+    function showActionPanel(actions) {
+        const btnDiv = document.getElementById('actionBtns');
+        btnDiv.innerHTML = '';
+        actions.forEach(act => {
+            let btn = document.createElement('button');
+            btn.innerText = act;
+            btn.onclick = () => {
+                if (act === '吃') {
+                    if (activeEatOptions.length === 1) executeEat(activeEatOptions[0]);
+                    else {
+                        // 顯示多個吃牌組合選項
+                        document.getElementById('eatSubPanel').style.display = 'block';
+                        activeEatOptions.forEach(opt => {
+                            let subBtn = document.createElement('button');
+                            subBtn.innerText = `用 ${opt[0]}${opt[1]} 吃`;
+                            subBtn.onclick = () => { executeEat(opt); document.getElementById('actionPanel').style.display='none'; };
+                            document.getElementById('eatSubPanel').appendChild(subBtn);
+                        });
+                    }
+                } else { document.getElementById('actionPanel').style.display = 'none'; }
+            };
+            btnDiv.appendChild(btn);
+        });
+        document.getElementById('actionPanel').style.display = 'flex';
     }
 
-    function playerDiscard(index) {
-        if (!isWaitingPlayerDiscard || isGameOver) return;
-        const discarded = players[0].hand.splice(index, 1)[0]; sortHand(players[0].hand);
-        lastDiscardedTile = discarded; lastDiscarderPoolId = players[0].poolId; pools["你"].push(discarded); isWaitingPlayerDiscard = false;
-        renderPlayerHand(); renderSinglePool("你", players[0].poolId); setTimeout(() => interceptSystem(discarded, 0), 50);
+    function render() {
+        document.getElementById('hand').innerHTML = players[0].hand.map(t => `<div class="tile">${tileUnicode[t.code]}</div>`).join('');
+        document.getElementById('meldsArea').innerHTML = players[0].melds.map(m => `<div class="meld-group">${m.map(t=>`<div class="tile">${tileUnicode[t.code]}</div>`).join('')}</div>`).join('');
     }
 
-    function nextTurn() { currentTurn = (currentTurn + 1) % 4; startTurn(); }
-    function endGame(msg) { isGameOver = true; document.getElementById('msg').innerText = msg; document.getElementById('actionPanel').style.display = 'flex'; document.getElementById('btnRestart').style.display = 'block'; }
-    function checkHu(hand) {
-        let counts = {}; hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
-        for (let tile in counts) if (counts[tile] >= 2) { let c = {...counts}; c[tile]-=2; if(c[tile]===0) delete c[tile]; if(canFormMelds(c)) return true; }
-        return false;
-    }
-    function canFormMelds(c) {
-        if (Object.keys(c).length === 0) return true;
-        let first = Object.keys(c).sort()[0];
-        if (c[first] >= 3) { let next = {...c}; next[first]-=3; if(next[first]===0) delete next[first]; if(canFormMelds(next)) return true; }
-        let num = parseInt(first), suit = first.replace(num, '');
-        if (!isNaN(num) && c[(num+1)+suit] && c[(num+2)+suit]) { let next = {...c}; [first, (num+1)+suit, (num+2)+suit].forEach(t => { next[t]--; if(next[t]===0) delete next[t]; }); if(canFormMelds(next)) return true; }
-        return false;
-    }
-    function renderPlayerHand(newTileIdx = -1) {
-        const handDiv = document.getElementById('hand'); handDiv.innerHTML = '';
-        players[0].hand.forEach((tile, index) => {
-            const el = document.createElement('div'); el.className = 'tile'; el.innerText = tileUnicode[tile.code] || tile.name;
-            if (index === newTileIdx) el.classList.add('new-drawn');
-            el.onclick = () => playerDiscard(index); handDiv.appendChild(el);
-        });
-    }
-    function renderMelds() {
-        const div = document.getElementById('meldsArea'); div.innerHTML = '';
-        players[0].melds.forEach(g => {
-            const gDiv = document.createElement('div'); gDiv.className = 'meld-group';
-            g.forEach(t => { const e = document.createElement('div'); e.className = 'tile'; e.innerText = tileUnicode[t.code] || t.name; gDiv.appendChild(e); });
-            div.appendChild(gDiv);
-        });
-    }
-    function renderSinglePool(owner, poolId) {
-        const div = document.getElementById(poolId); div.innerHTML = '';
-        pools[owner].forEach(t => {
-            const e = document.createElement('div'); e.className = 'pool-tile'; e.innerText = tileUnicode[t.code] || t.name;
-            if (t === lastDiscardedTile && poolId === lastDiscarderPoolId) e.classList.add('last-shot');
-            div.appendChild(e);
-        });
-    }
-    function updateTurnHighlight() { for(let p=1; p<=3; p++) document.getElementById(players[p].boxId).classList.toggle('active', currentTurn === p); }
-    function updateUI() { renderPlayerHand(); renderMelds(); players.forEach(p => renderSinglePool(p.name, p.poolId)); }
-    function hideAllActionButtons() { document.querySelectorAll('.action-btn').forEach(b => b.style.display = 'none'); }
-    startGame();
+    initGame();
+    // 模擬：上家打出一張 2 萬，測試吃牌邏輯
+    setTimeout(() => {
+        lastDiscardedTile = {name: '2萬', suit: '萬', val: 2, code: '2萬'};
+        document.getElementById('msg').innerText = "上家打出 2 萬";
+        interceptSystem(lastDiscardedTile, 3);
+    }, 1000);
 </script>
 </body>
 </html>

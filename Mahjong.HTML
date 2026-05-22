@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>台灣 16 張麻將 </title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+        body {
+            background-color: #166133; 
+            color: #fff;
+            font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "PingFang TC", "Microsoft JhengHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #header { background: rgba(0,0,0,0.5); padding: 6px; text-align: center; height: 50px; }
+        h2 { font-size: 15px; color: #ffeb3b; }
+        #msg { color: #fff; font-size: 13px; margin-top: 2px; min-height: 18px; }
+
+        #gameTable {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 4px;
+            position: relative;
+        }
+
+        #npcArea { 
+            display: flex; 
+            justify-content: space-between; 
+            gap: 8px;
+            width: 100%; 
+        }
+        
+        .npc-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .npc-box {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid #2c854c; padding: 6px 4px;
+            border-radius: 6px; text-align: center; width: 100%; font-size: 13px;
+            transition: all 0.3s ease;
+        }
+        .npc-box.active { border-color: #ffeb3b; background: rgba(255,235,59,0.15); box-shadow: 0 0 8px rgba(255,235,59,0.5); }
+        
+        .npc-box.ting-danger { 
+            background: rgba(156, 39, 176, 0.4) !important; 
+            border: 2px solid #ab47bc !important; 
+            box-shadow: 0 0 12px rgba(171, 71, 188, 0.6) !important;
+        }
+        .npc-box.ting-danger.active {
+            background: rgba(186, 104, 200, 0.5) !important;
+            border-color: #ffeb3b !important;
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.6) !important;
+        }
+        
+        .npc-action { 
+            display: block;
+            margin-top: 4px;
+            padding: 2px 4px;
+            background: #424242;
+            color: #ccc; 
+            font-size: 12px; 
+            font-weight: bold; 
+            border-radius: 4px;
+            min-height: 20px;
+            transition: all 0.2s;
+        }
+        .npc-action.act-eat { background: #2e7d32; color: #fff; box-shadow: 0 0 5px #2e7d32; animation: pop 0.3s; }
+        .npc-action.act-pong { background: #e65100; color: #fff; box-shadow: 0 0 5px #e65100; animation: pop 0.3s; }
+        .npc-action.act-gang { background: #0288d1; color: #fff; box-shadow: 0 0 5px #0288d1; animation: pop 0.3s; }
+        .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 8px #e91e63; animation: pop 0.4s; }
+        .npc-action.act-discard { background: rgba(255,255,255,0.2); color: #fff; }
+
+        @keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        .discard-pool {
+            display: flex;
+            gap: 4px 3px;
+            flex-wrap: wrap;
+            background: rgba(0,0,0,0.15);
+            border-radius: 4px;
+            padding: 4px;
+            overflow-y: auto;
+        }
+
+        .npc-pool {
+            width: 100%;
+            height: 90px;
+            align-content: start;
+        }
+
+        #centerArea {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+        }
+        #playerPool { 
+            width: 100%; 
+            max-width: 320px; 
+            height: 75px; 
+            align-content: start; 
+        }
+
+        #actionPanel {
+            display: none; justify-content: center; gap: 8px; background: rgba(0,0,0,0.85);
+            padding: 10px; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            border-radius: 6px; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .action-btn {
+            background: #f57c00; border: none; color: white; padding: 6px 14px;
+            font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;
+        }
+        .action-btn.win { background: #d32f2f; display: none; }
+        .action-btn.ting { background: #ab47bc; display: none; }
+        .action-btn.gang { background: #0288d1; display: none; }
+        .action-btn.pass { background: #757575; display: block; }
+
+        .restart-btn {
+            background: #4caf50; border: none; color: white; padding: 8px 18px;
+            font-size: 14px; font-weight: bold; border-radius: 4px; cursor: pointer; display: none;
+        }
+
+        #playerArea { background: rgba(0, 0, 0, 0.4); padding: 6px 4px 12px 4px; border-top: 1px solid #2c854c; }
+        #deckInfo { text-align: center; font-size: 11px; color: #a5d6a7; margin-bottom: 4px; }
+        
+        .player-board { display: flex; flex-direction: column; gap: 6px; width: 100%; align-items: center; }
+        #meldsArea { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; width: 100%; min-height: 32px; }
+        .meld-group { display: flex; gap: 1px; background: rgba(0,0,0,0.2); padding: 1px; border-radius: 2px; }
+        #hand { display: flex; justify-content: center; gap: 2px; width: 100%; flex-wrap: wrap; }
+
+        .tile {
+            background: linear-gradient(135deg, #ffffff 0%, #fcfcf4 100%);
+            color: #000;
+            width: 38px;
+            height: 52px;
+            border-radius: 4px 4px 3px 3px;
+            border: 1px solid #ccc;
+            box-shadow: 
+                0 1px 0 #bbb,
+                0 2px 0 #1b5e20, 
+                0 3px 0 #1b5e20, 
+                0 4px 1px rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 34px; 
+            line-height: 1;
+            position: relative;
+            margin-bottom: 4px;
+        }
+        
+        .tile.new-drawn { 
+            margin-left: 14px; 
+            border-color: #ff9800; 
+            box-shadow: 
+                0 0 5px #ff9800,
+                0 1px 0 #ff9800,
+                0 2px 0 #e65100, 
+                0 3px 0 #e65100, 
+                0 4px 2px rgba(0,0,0,0.4); 
+        }
+        .tile.locked { cursor: not-allowed; opacity: 0.6; background: #e0e0e0; border-color: #999; box-shadow: none; }
+
+        .tile .ting-tag {
+            position: absolute; top: -5px; right: -4px; background: #ab47bc; color: #fff;
+            font-size: 9px; font-weight: bold; padding: 0 2px; border-radius: 3px; z-index: 10;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .meld-group .tile { 
+            width: 26px; 
+            height: 36px; 
+            font-size: 24px; 
+            box-shadow: 
+                0 1px 0 #ccc,
+                0 2px 0 #1b5e20,
+                0 3px 1px rgba(0,0,0,0.3); 
+            margin-bottom: 2px;
+        }
+
+        .pool-tile {
+            background: linear-gradient(135deg, #fcfcf9 0%, #f5f5ee 100%);
+            color: #000;
+            width: 24px; 
+            height: 33px; 
+            border-radius: 3px 3px 2px 2px;
+            border: 1px solid #ccc; 
+            box-shadow: 
+                0 1px 0 #bbb,
+                0 2px 0 #1b5e20,
+                0 2px 1px rgba(0,0,0,0.3);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 22px;
+            margin-bottom: 2px;
+        }
+        .pool-tile.last-shot { 
+            border-color: #ffeb3b; 
+            background: #fffde7;
+            box-shadow: 
+                0 0 5px #ffeb3b,
+                0 1px 0 #ffeb3b,
+                0 2px 0 #e65100;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="header">
+        <h2>台灣 16 張麻將</h2>
+        <div id="msg">正在初始化牌局...</div>
+    </div>
+
+    <div id="gameTable">
+        <div id="npcArea">
+            <div class="npc-column">
+                <div class="npc-box" id="npc1Box"><div>下家</div><span class="npc-action" id="npc1Act">-</span></div>
+                <div class="discard-pool npc-pool" id="rightPool"></div>
+            </div>
+
+            <div class="npc-column">
+                <div class="npc-box" id="npc2Box"><div>對家</div><span class="npc-action" id="npc2Act">-</span></div>
+                <div class="discard-pool npc-pool" id="topPool"></div>
+            </div>
+
+            <div class="npc-column">
+                <div class="npc-box" id="npc3Box"><div>上家</div><span class="npc-action" id="npc3Act">-</span></div>
+                <div class="discard-pool npc-pool" id="leftPool"></div>
+            </div>
+        </div>
+
+        <div id="centerArea">
+            <div class="discard-pool" id="playerPool"></div>
+        </div>
+
+        <div id="actionPanel">
+            <button class="action-btn win" id="btnWin" onclick="actionResponse('WIN')">胡牌 🀄</button>
+            <button class="action-btn ting" id="btnTing" onclick="actionResponse('TING_CLICK')">聽牌 📢</button>
+            <button class="action-btn" id="btnEat" onclick="actionResponse('EAT')">吃</button>
+            <button class="action-btn" id="btnPong" onclick="actionResponse('PONG')">碰</button>
+            <button class="action-btn gang" id="btnGang" onclick="actionResponse('GANG')">槓牌 🀄</button>
+            <button class="action-btn pass" id="btnPass" onclick="actionResponse('PASS')">過</button>
+            <button class="restart-btn" id="btnRestart" onclick="startGame()">再玩一局 🀄</button>
+        </div>
+    </div>
+
+    <div id="playerArea">
+        <div id="deckInfo">🀫 剩餘牌數: <span id="deckCount">0</span> 張</div>
+        <div class="player-board">
+            <div id="meldsArea"></div>
+            <div id="hand"></div>
+        </div>
+    </div>
+
+<script>
+    const suits = ['萬', '筒', '條'];
+    const suitOrder = { '萬':1, '筒':2, '條':3, '字':4 };
+
+    const tileUnicode = {
+        '1萬': '🀇', '2萬': '🀈', '3萬': '🀉', '4萬': '🀊', '5萬': '🀋', '6萬': '🀌', '7萬': '🀍', '8萬': '🀎', '9萬': '🀏',
+        '1筒': '🀙', '2筒': '🀚', '3筒': '🀛', '4筒': '🀜', '5筒': '🀝', '6筒': '🀞', '7筒': '🀟', '8筒': '🀠', '9筒': '🀡',
+        '1條': '🀐', '2條': '🀑', '3條': '🀒', '4條': '🀓', '5條': '🀔', '6條': '🀕', '7條': '🀖', '8條': '🀗', '9條': '🀘',
+        '東': '🀀', '南': '🀁', '西': '🀂', '北': '🀃', '中': '🀄', '發': '🀅', '白': '🀆'
+    };
+
+    const allTileNames = [];
+    suits.forEach(s => { for(let i=1; i<=9; i++) allTileNames.push(i+s); });
+    ['東', '南', '西', '北', '中', '發', '白'].forEach(h => allTileNames.push(h));
+
+    let deck = [];
+    let pools = { "你": [], "下家": [], "對家": [], "上家": [] };
+    
+    let players = [
+        { name: "你", hand: [], melds: [], isNPC: false, poolId: "playerPool", isTingLocked: false }, 
+        { name: "下家", hand: [], melds: [], isNPC: true, boxId: "npc1Box", actId: "npc1Act", poolId: "rightPool", isTingLocked: false },
+        { name: "對家", hand: [], melds: [], isNPC: true, boxId: "npc2Box", actId: "npc2Act", poolId: "topPool", isTingLocked: false },
+        { name: "上家", hand: [], melds: [], isNPC: true, boxId: "npc3Box", actId: "npc3Act", poolId: "leftPool", isTingLocked: false }
+    ];
+    
+    let currentTurn = 0; 
+    let isWaitingPlayerDiscard = false;
+    let lastDiscardedTile = null;
+    let lastDiscarderPoolId = null; 
+    let activeEatOptions = [];
+    let isGameOver = false;
+
+    let activeGangOptions = []; 
+    let playerHandTingData = [];       
+    let isPlayerTingModeActive = false; 
+    let isPlayerDeclinedTing = false; 
+    let isAwaitingTingChoice = false;
+
+    function initDeck() {
+        deck = [];
+        suits.forEach(s => {
+            for(let i=1; i<=9; i++) {
+                for(let j=0; j<4; j++) deck.push({ name: i+s, suit: s, val: i, code: i+s });
+            }
+        });
+        ['東', '南', '西', '北', '中', '發', '白'].forEach(h => {
+            for(let j=0; j<4; j++) deck.push({ name: h, suit: '字', val: 10 + ['東', '南', '西', '北', '中', '發', '白'].indexOf(h), code: h });
+        });
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+    }
+
+    function sortHand(hand) {
+        hand.sort((a, b) => {
+            if (suitOrder[a.suit] !== suitOrder[b.suit]) return suitOrder[a.suit] - suitOrder[b.suit];
+            return a.val - b.val;
+        });
+    }
+
+    function startGame() {
+        isGameOver = false;
+        isPlayerTingModeActive = false;
+        isPlayerDeclinedTing = false; 
+        isAwaitingTingChoice = false;
+        playerHandTingData = [];
+        lastDiscardedTile = null;
+        lastDiscarderPoolId = null;
+        activeGangOptions = [];
+
+        document.getElementById('actionPanel').style.display = 'none';
+        document.getElementById('btnRestart').style.display = 'none';
+        
+        initDeck();
+        pools = { "你": [], "下家": [], "對家": [], "上家": [] };
+        
+        players.forEach(p => { 
+            p.hand = []; 
+            p.melds = []; 
+            p.isTingLocked = false;
+            if(p.isNPC) {
+                setNpcStatusStyle(p, '-', 'act-discard');
+                document.getElementById(p.boxId).classList.remove('ting-danger');
+            }
+        });
+
+        for(let i=0; i<16; i++) {
+            for(let p=0; p<4; p++) { players[p].hand.push(deck.pop()); }
+        }
+        players.forEach(p => sortHand(p.hand));
+        
+        updateUI();
+        currentTurn = 0;
+        startTurn();
+    }
+
+    function setNpcStatusStyle(npc, text, className) {
+        const span = document.getElementById(npc.actId);
+        if(!span) return;
+        span.innerText = text;
+        span.className = "npc-action " + className;
+    }
+
+    function updateTingStatus() {
+        let hand = players[0].hand;
+        playerHandTingData = Array(hand.length).fill(null);
+
+        if (players[0].isTingLocked) return false;
+        if (isPlayerDeclinedTing) return false;
+
+        if (hand.length % 3 === 2) {
+            let foundAnyTing = false;
+            for (let i = 0; i < hand.length; i++) {
+                let tempHand = [...hand];
+                tempHand.splice(i, 1); 
+                let tingList = [];
+                for (let testTileName of allTileNames) {
+                    let testHand = [...tempHand, { name: testTileName, suit: testTileName.includes('萬')?'萬':testTileName.includes('筒')?'筒':testTileName.includes('條')?'條':'字', val: parseInt(testTileName)||10 }];
+                    if (checkHu(testHand)) { tingList.push(testTileName); }
+                }
+                if (tingList.length > 0) { 
+                    playerHandTingData[i] = tingList; 
+                    foundAnyTing = true;
+                }
+            }
+            return foundAnyTing;
+        }
+        return false;
+    }
+
+    function checkNpcTingAvailable(npc) {
+        if (npc.isTingLocked) return null;
+        let hand = npc.hand;
+        if (hand.length % 3 !== 2) return null;
+
+        for (let i = 0; i < hand.length; i++) {
+            let tempHand = [...hand];
+            tempHand.splice(i, 1);
+            for (let testTileName of allTileNames) {
+                let testHand = [...tempHand, { name: testTileName, suit: testTileName.includes('萬')?'萬':testTileName.includes('筒')?'筒':testTileName.includes('條')?'條':'字', val: parseInt(testTileName)||10 }];
+                if (checkHu(testHand)) {
+                    return i; 
+                }
+            }
+        }
+        return null;
+    }
+
+    function startTurn() {
+        if (isGameOver) return;
+        updateTurnHighlight();
+        document.getElementById('deckCount').innerText = deck.length;
+
+        if (deck.length === 0) {
+            endGame("流局！牌抓完了。");
+            return;
+        }
+
+        let p = players[currentTurn];
+
+        if (!p.isNPC) {
+            const newTile = deck.pop();
+            p.hand.push(newTile);
+            isWaitingPlayerDiscard = true;
+            isAwaitingTingChoice = false; 
+            
+            let canWin = checkHu(p.hand);
+
+            if (p.isTingLocked) {
+                if (canWin) {
+                    document.getElementById('actionPanel').style.display = 'flex';
+                    hideAllActionButtons();
+                    document.getElementById('btnWin').innerText = "自摸 🀄"; 
+                    document.getElementById('btnWin').style.display = 'block';
+                    document.getElementById('msg').innerText = `✨✨ 聽牌自摸！！！快點擊【自摸 🀄】！`;
+                    renderPlayerHand(p.hand.length - 1); 
+                } else {
+                    document.getElementById('actionPanel').style.display = 'none';
+                    document.getElementById('msg').innerText = `【聽牌自動摸打】自動打出摸到的 ${newTile.name}`;
+                    renderPlayerHand(p.hand.length - 1); 
+                    setTimeout(() => { autoDiscardNewDrawn(); }, 1200); 
+                }
+                return;
+            }
+
+            let canTing = false;
+            if (!isPlayerDeclinedTing) {
+                canTing = updateTingStatus();
+            } else {
+                playerHandTingData = Array(p.hand.length).fill(null);
+            }
+
+            checkSelfGangOptions(p);
+            let canGang = activeGangOptions.length > 0;
+
+            if (canWin || canTing || canGang) {
+                document.getElementById('actionPanel').style.display = 'flex';
+                hideAllActionButtons();
+                if (canWin) {
+                    document.getElementById('btnWin').innerText = "自摸 🀄"; 
+                    document.getElementById('btnWin').style.display = 'block';
+                }
+                
+                if (canTing) {
+                    document.getElementById('btnTing').style.display = 'block';
+                    isAwaitingTingChoice = true; 
+                }
+                
+                document.getElementById('btnGang').style.display = canGang ? 'block' : 'none';
+                document.getElementById('btnPass').style.display = 'block';
+                document.getElementById('msg').innerText = `💡 請先決定是否要【${canTing?'聽牌📢':''}】或【過】（此時手牌防呆鎖定）`;
+            } else {
+                document.getElementById('actionPanel').style.display = 'none';
+                document.getElementById('msg').innerText = `【你的回合】請點選一張牌打出`;
+            }
+            renderPlayerHand(p.hand.length - 1);
+            
+        } else {
+            document.getElementById('msg').innerText = `${p.name} 摸牌中...`;
+            setTimeout(() => {
+                if (isGameOver) return;
+                const newTile = deck.pop();
+                p.hand.push(newTile); 
+                sortHand(p.hand);
+
+                if (checkHu(p.hand)) {
+                    endGame(`💥💥 ${p.name} 自摸胡牌了！電腦贏了！`);
+                    return;
+                }
+                
+                if (p.isTingLocked) {
+                    let idx = p.hand.indexOf(newTile);
+                    if(idx === -1) idx = p.hand.length - 1;
+                    npcDiscard(p, idx);
+                } else {
+                    let npcGangOpt = checkNpcSelfGang(p);
+                    if(npcGangOpt) {
+                        executeNpcGang(p, npcGangOpt);
+                        return;
+                    }
+
+                    let tingDiscardIdx = checkNpcTingAvailable(p);
+                    if (tingDiscardIdx !== null) {
+                        p.isTingLocked = true;
+                        document.getElementById(p.boxId).classList.add('ting-danger');
+                        setNpcStatusStyle(p, `宣告聽牌 📢`, `act-ting`);
+                        document.getElementById('msg').innerText = `📢 ${p.name} 宣告聽牌！底色已鎖定危險紫色！`;
+                        setTimeout(() => { npcDiscard(p, tingDiscardIdx); }, 1800); 
+                    } else {
+                        npcAIPlay(p);
+                    }
+                }
+            }, 1500); 
+        }
+    }
+
+    function autoDiscardNewDrawn() {
+        if (!isWaitingPlayerDiscard || isGameOver) return;
+        let p = players[0];
+        let idx = p.hand.length - 1;
+        const discarded = p.hand.splice(idx, 1)[0];
+        
+        lastDiscardedTile = discarded;
+        lastDiscarderPoolId = p.poolId;
+        pools["你"].push(discarded);
+        isWaitingPlayerDiscard = false;
+        
+        renderPlayerHand();
+        renderSinglePool("你", p.poolId);
+        
+        setTimeout(() => { interceptSystem(discarded, 0); }, 50);
+    }
+
+    function checkSelfGangOptions(player) {
+        activeGangOptions = [];
+        let counts = {};
+        player.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
+        for (let tileName in counts) {
+            if (counts[tileName] === 4) {
+                activeGangOptions.push({ type: 'AN_GANG', name: tileName });
+            }
+        }
+        player.hand.forEach(t => {
+            let matchesMeld = player.melds.some(meld => meld.length === 3 && meld[0].name === t.name && meld[1].name === t.name);
+            if (matchesMeld) {
+                if (!activeGangOptions.some(o => o.name === t.name)) {
+                    activeGangOptions.push({ type: 'JIA_GANG', name: t.name });
+                }
+            }
+        });
+    }
+
+    function checkNpcSelfGang(npc) {
+        let counts = {};
+        npc.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
+        for (let name in counts) {
+            if (counts[name] === 4) return { type: 'AN_GANG', name: name };
+        }
+        for (let t of npc.hand) {
+            if (npc.melds.some(m => m.length === 3 && m[0].name === t.name)) {
+                return { type: 'JIA_GANG', name: t.name };
+            }
+        }
+        return null;
+    }
+
+    function executeNpcGang(npc, gangOpt) {
+        setNpcStatusStyle(npc, `暗槓 🀄`, `act-gang`);
+        if (gangOpt.type === 'AN_GANG') {
+            let group = [];
+            for(let i=npc.hand.length-1; i>=0; i--) {
+                if(npc.hand[i].name === gangOpt.name) group.push(npc.hand.splice(i,1)[0]);
+            }
+            npc.melds.push(group);
+        } else {
+            let idx = npc.hand.findIndex(t => t.name === gangOpt.name);
+            let t = npc.hand.splice(idx, 1)[0];
+            let m = npc.melds.find(m => m.length === 3 && m[0].name === gangOpt.name);
+            if(m) m.push(t);
+        }
+        
+        setTimeout(() => {
+            if(deck.length === 0) { endGame("流局！"); return; }
+            const newTile = deck.pop();
+            npc.hand.push(newTile);
+            sortHand(npc.hand);
+            if(checkHu(npc.hand)) {
+                endGame(`💥💥 ${npc.name} 槓上開花自摸了！`);
+            } else {
+                npcAIPlay(npc);
+            }
+        }, 1500); 
+    }
+
+    function npcAIPlay(npc) {
+        let hand = npc.hand;
+        let score = Array(hand.length).fill(0);
+
+        for(let i=0; i<hand.length; i++) {
+            let t = hand[i];
+            if (t.suit === '字') {
+                let sameCount = hand.filter(x => x.name === t.name).length;
+                score[i] = (sameCount >= 2) ? 10 : 0; 
+            } else {
+                let same = hand.filter(x => x.name === t.name).length;
+                let neighbor1 = hand.filter(x => x.suit === t.suit && Math.abs(x.val - t.val) === 1).length;
+                let neighbor2 = hand.filter(x => x.suit === t.suit && Math.abs(x.val - t.val) === 2).length;
+                score[i] = (same * 4) + (neighbor1 * 2) + neighbor2;
+            }
+        }
+
+        let minScore = Math.min(...score);
+        let discardIndex = score.indexOf(minScore);
+        if (discardIndex === -1) discardIndex = hand.length - 1;
+
+        npcDiscard(npc, discardIndex);
+    }
+
+    function npcDiscard(npc, index) {
+        const discarded = npc.hand.splice(index, 1)[0];
+        sortHand(npc.hand);
+        
+        lastDiscardedTile = discarded;
+        lastDiscarderPoolId = npc.poolId;
+        pools[npc.name].push(discarded);
+        
+        if(!npc.isTingLocked) {
+            setNpcStatusStyle(npc, `打出 ${discarded.name}`, `act-discard`);
+        } else {
+            setNpcStatusStyle(npc, `聽牌打 ${discarded.name}`, `act-ting`);
+        }
+        
+        renderSinglePool(npc.name, npc.poolId);
+        
+        setTimeout(() => {
+            interceptSystem(discarded, currentTurn);
+        }, 80);
+    }
+
+    function interceptSystem(tile, shooterIndex) {
+        if (isGameOver) return;
+
+        // 1. 胡牌放銃檢查
+        for (let i = 1; i <= 3; i++) {
+            let nextIdx = (shooterIndex + i) % 4;
+            let checker = players[nextIdx];
+            let testHand = [...checker.hand, tile];
+            sortHand(testHand);
+
+            if (checkHu(testHand)) {
+                if (!checker.isNPC) {
+                    document.getElementById('actionPanel').style.display = 'flex';
+                    hideAllActionButtons();
+                    document.getElementById('btnWin').innerText = "胡牌 🀄"; 
+                    document.getElementById('btnWin').style.display = 'block';
+                    document.getElementById('btnPass').style.display = 'block';
+                    document.getElementById('msg').innerText = `🔥 電腦放銃 ${tile.name}！快點擊【胡牌 🀄】！`;
+                    return; 
+                } else {
+                    endGame(`🎉 ${checker.name} 胡牌了！抓到 ${players[shooterIndex].name} 放銃！`);
+                    return;
+                }
+            }
+        }
+
+        // 2. 碰牌與明槓檢查 (【核心 Bug 修復點】：加入同名比對驗證！)
+        for (let i = 1; i <= 3; i++) {
+            let nextIdx = (shooterIndex + i) % 4;
+            let checker = players[nextIdx];
+            if (checker.isTingLocked) continue; 
+
+            // 【修復核心】：不但算數量，還必須完全等於被打出的那張牌的名稱！
+            let matchCount = checker.hand.filter(t => t.name === tile.name).length;
+
+            if (!checker.isNPC) {
+                let canPong = (matchCount >= 2);
+                activeGangOptions = [];
+                if (matchCount === 3) activeGangOptions.push({ type: 'MING_GANG', name: tile.name });
+                let canGang = activeGangOptions.length > 0;
+
+                let canEat = false;
+                activeEatOptions = [];
+                if (shooterIndex === 3 && tile.suit !== '字') {
+                    let v = tile.val, s = tile.suit;
+                    let has = (val) => checker.hand.some(t => t.suit === s && t.val === val);
+                    if (has(v-2) && has(v-1)) { canEat = true; activeEatOptions.push([v-2, v-1]); }
+                    if (has(v-1) && has(v+1)) { canEat = true; activeEatOptions.push([v-1, v+1]); }
+                    if (has(v+1) && has(v+2)) { canEat = true; activeEatOptions.push([v+1, v+2]); }
+                }
+
+                if (canEat || canPong || canGang) {
+                    document.getElementById('actionPanel').style.display = 'flex';
+                    hideAllActionButtons();
+                    document.getElementById('btnEat').style.display = canEat ? 'block' : 'none';
+                    document.getElementById('btnPong').style.display = canPong ? 'block' : 'none';
+                    document.getElementById('btnGang').style.display = canGang ? 'block' : 'none';
+                    document.getElementById('btnPass').style.display = 'block';
+                    document.getElementById('msg').innerText = `💡 ${players[shooterIndex].name} 打出 ${tile.name}，您可以進行操作`;
+                    return;
+                }
+            } else {
+                // 電腦攔截：同樣只有在「名字完全對上」且數量夠時，才可以碰或明槓
+                if (matchCount === 3) {
+                    setNpcStatusStyle(checker, `明槓 🀄`, `act-gang`);
+                    document.getElementById('msg').innerText = `📢 ${checker.name} 攔截大喊：槓牌！`;
+                    
+                    pools[players[shooterIndex].name].pop();
+                    renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
+                    
+                    let group = [tile];
+                    for(let k=checker.hand.length-1; k>=0; k--) {
+                        if(checker.hand[k].name === tile.name) group.push(checker.hand.splice(k,1)[0]);
+                    }
+                    checker.melds.push(group);
+                    currentTurn = nextIdx;
+                    
+                    setTimeout(() => {
+                        if(deck.length === 0) { endGame("流局！"); return; }
+                        const drawTile = deck.pop();
+                        checker.hand.push(drawTile);
+                        sortHand(checker.hand);
+                        if(checkHu(checker.hand)) endGame(`💥💥 ${checker.name} 槓上開花胡了！`);
+                        else npcAIPlay(checker);
+                    }, 1500);
+                    return;
+                } else if (matchCount === 2) {
+                    setNpcStatusStyle(checker, `碰 📢`, `act-pong`);
+                    document.getElementById('msg').innerText = `📢 ${checker.name} 攔截大喊：碰！`;
+                    
+                    pools[players[shooterIndex].name].pop();
+                    renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
+                    
+                    // 從手牌中移除完全對應名稱的兩張牌
+                    for(let k=checker.hand.length-1; k>=0; k--) {
+                        if(checker.hand[k].name === tile.name) checker.hand.splice(k,1);
+                    }
+                    // 碰出來的組合必須是三張一模一樣的牌
+                    checker.melds.push([tile, tile, tile]);
+                    currentTurn = nextIdx;
+                    
+                    setTimeout(() => { npcAIPlay(checker); }, 1500);
+                    return;
+                }
+            }
+        }
+
+        // 3. 吃牌檢查
+        let nextPlayerIdx = (shooterIndex + 1) % 4;
+        let nextPlayer = players[nextPlayerIdx];
+        if (nextPlayer.isNPC && !nextPlayer.isTingLocked && tile.suit !== '字') {
+            let hand = nextPlayer.hand;
+            let v = tile.val, s = tile.suit;
+            let has = (val) => hand.some(t => t.suit === s && t.val === val);
+            let eatGroup = null;
+
+            if (has(v-2) && has(v-1)) eatGroup = [v-2, v-1];
+            else if (has(v-1) && has(v+1)) eatGroup = [v-1, v+1];
+            else if (has(v+1) && has(v+2)) eatGroup = [v+1, v+2];
+
+            if (eatGroup) {
+                setNpcStatusStyle(nextPlayer, `吃 🥢`, `act-eat`);
+                document.getElementById('msg').innerText = `🥢 下家 攔截了你打的 ${tile.name}，大喊：吃！`;
+                
+                pools[players[shooterIndex].name].pop();
+                renderSinglePool(players[shooterIndex].name, players[shooterIndex].poolId);
+                
+                let t1 = hand.splice(hand.findIndex(t => t.suit === s && t.val === eatGroup[0]), 1)[0];
+                let t2 = hand.splice(hand.findIndex(t => t.suit === s && t.val === eatGroup[1]), 1)[0];
+                let combined = [t1, tile, t2].sort((a,b)=>a.val-b.val);
+                nextPlayer.melds.push(combined);
+                
+                currentTurn = nextPlayerIdx;
+                setTimeout(() => { npcAIPlay(nextPlayer); }, 1500);
+                return;
+            }
+        }
+
+        setTimeout(nextTurn, 600); 
+    }
+
+    function actionResponse(action) {
+        let hand = players[0].hand;
+        let tile = lastDiscardedTile;
+        let shooterObj = players[currentTurn];
+
+        if (action === 'PASS') { 
+            document.getElementById('actionPanel').style.display = 'none'; 
+            isPlayerTingModeActive = false; 
+
+            if (isAwaitingTingChoice) {
+                isAwaitingTingChoice = false; 
+                isPlayerDeclinedTing = true;
+                playerHandTingData = Array(hand.length).fill(null);
+                document.getElementById('msg').innerText = `【你的回合】您選擇不聽牌。請挑選一張牌打出。`;
+                renderPlayerHand(hand.length - 1); 
+                return;
+            }
+
+            if(document.getElementById('btnWin').style.display === 'block' && players[0].isTingLocked) {
+               endGame("你聽牌過水不胡。遊戲結束。");
+               return;
+            }
+
+            if (currentTurn === 0 && isWaitingPlayerDiscard) {
+                document.getElementById('msg').innerText = `【你的回合】請點選一張牌打出`;
+                renderPlayerHand(hand.length - 1); 
+                return; 
+            }
+
+            setTimeout(nextTurn, 300);
+            return; 
+        }
+
+        if (action === 'WIN') {
+            let winWord = (currentTurn === 0) ? "自摸" : "胡牌";
+            endGame(`🎉🎉🎉 ${winWord}！你贏了！ 🎉🎉局結束。`);
+            return;
+        }
+
+        if (action === 'TING_CLICK') {
+            isAwaitingTingChoice = false; 
+            isPlayerTingModeActive = true; 
+            document.getElementById('actionPanel').style.display = 'none';
+            document.getElementById('msg').innerText = `📢 請從發亮（標註「聽」）的牌中，挑選一張牌打出以確認鎖死聽牌！`;
+            renderPlayerHand(hand.length - 1);
+            return;
+        }
+
+        isPlayerDeclinedTing = false; 
+        isAwaitingTingChoice = false;
+        document.getElementById('actionPanel').style.display = 'none';
+        pools[shooterObj.name].pop(); 
+        renderSinglePool(shooterObj.name, shooterObj.poolId);
+
+        if (action === 'GANG') {
+            let target = activeGangOptions[0];
+            if (target.type === 'JIA_GANG') {
+                let idx = hand.findIndex(t => t.name === target.name);
+                let gangTile = hand.splice(idx, 1)[0];
+                let meld = players[0].melds.find(m => m.length === 3 && m[0].name === target.name);
+                if (meld) meld.push(gangTile);
+            } 
+            else if (target.type === 'AN_GANG') {
+                let gangGroup = [];
+                for (let i = hand.length - 1; i >= 0; i--) {
+                    if (hand[i].name === target.name) gangGroup.push(hand.splice(i, 1)[0]);
+                }
+                players[0].melds.push(gangGroup);
+            } 
+            else if (target.type === 'MING_GANG') {
+                let gangGroup = [tile];
+                for (let i = hand.length - 1; i >= 0; i--) {
+                    if (hand[i].name === target.name) gangGroup.push(hand.splice(i, 1)[0]);
+                }
+                players[0].melds.push(gangGroup);
+            }
+
+            currentTurn = 0; 
+            isWaitingPlayerDiscard = true;
+            document.getElementById('msg').innerText = `🀄 槓牌成功！正在補牌...`;
+
+            setTimeout(() => {
+                const drawTile = deck.pop();
+                hand.push(drawTile); 
+                document.getElementById('deckCount').innerText = deck.length;
+
+                let canWinAfterGang = checkHu(hand);
+                let canTingAfterGang = updateTingStatus();
+                checkSelfGangOptions(players[0]);
+
+                if (canWinAfterGang || canTingAfterGang || activeGangOptions.length > 0) {
+                    document.getElementById('actionPanel').style.display = 'flex';
+                    hideAllActionButtons();
+                    if (canWinAfterGang) { document.getElementById('btnWin').innerText = "自摸 🀄"; document.getElementById('btnWin').style.display = 'block'; }
+                    
+                    if (canTingAfterGang) {
+                        document.getElementById('btnTing').style.display = 'block';
+                        isAwaitingTingChoice = true; 
+                    }
+                    
+                    document.getElementById('btnGang').style.display = (activeGangOptions.length > 0) ? 'block' : 'none';
+                    document.getElementById('btnPass').style.display = 'block';
+                }
+                renderPlayerHand(hand.length - 1);
+                renderMelds();
+            }, 800);
+            return;
+        }
+
+        if (action === 'PONG') {
+            let count = 0;
+            for (let i = hand.length - 1; i >= 0; i--) {
+                if (hand[i].name === tile.name && count < 2) { hand.splice(i, 1); count++; }
+            }
+            players[0].melds.push([tile, tile, tile]);
+            currentTurn = 0;
+            isWaitingPlayerDiscard = true;
+        } 
+        else if (action === 'EAT') {
+            let opt = activeEatOptions[0]; 
+            let v1 = opt[0], v2 = opt[1];
+            let t1 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === v1), 1)[0];
+            let t2 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === v2), 1)[0];
+            let group = [t1, tile, t2].sort((a,b)=>a.val-b.val);
+            players[0].melds.push(group);
+            currentTurn = 0;
+            isWaitingPlayerDiscard = true;
+        }
+
+        let canTingAfterMeld = updateTingStatus();
+        if (canTingAfterMeld) {
+            document.getElementById('actionPanel').style.display = 'flex';
+            hideAllActionButtons();
+            document.getElementById('btnTing').style.display = 'block';
+            document.getElementById('btnPass').style.display = 'block';
+            isAwaitingTingChoice = true; 
+        }
+
+        renderPlayerHand();
+        renderMelds();
+    }
+
+    function playerDiscard(index) {
+        if (!isWaitingPlayerDiscard || isGameOver) return;
+        
+        if (isAwaitingTingChoice) {
+            document.getElementById('msg').innerText = `⚠️ 請先點擊【聽牌📢】或【過】，才能進行出牌！`;
+            return;
+        }
+
+        if (players[0].isTingLocked) return;
+
+        let p = players[0];
+        let tingList = playerHandTingData[index];
+
+        if (isPlayerTingModeActive) {
+            if (!tingList) {
+                document.getElementById('msg').innerText = `❌ 這張牌打了無法聽牌！請選擇有標註「聽」的牌打出。`;
+                return;
+            }
+            
+            p.isTingLocked = true;
+            isPlayerTingModeActive = false;
+
+            let tingTileNames = tingList.join(', ');
+            const discarded = p.hand.splice(index, 1)[0];
+            lastDiscardedTile = discarded;
+            lastDiscarderPoolId = p.poolId;
+            pools["你"].push(discarded);
+            isWaitingPlayerDiscard = false;
+
+            document.getElementById('msg').innerText = `📢 你已宣告聽牌！手牌鎖定進入自動摸打。`;
+            renderPlayerHand();
+            renderSinglePool("你", p.poolId);
+
+            setTimeout(() => {
+                alert(`📢 您已宣告聽牌！\n本局聽牌組合為：[ ${tingTileNames} ]`);
+                interceptSystem(discarded, 0); 
+            }, 100);
+            return;
+        }
+
+        const discarded = p.hand.splice(index, 1)[0];
+        sortHand(p.hand); 
+        
+        lastDiscardedTile = discarded;
+        lastDiscarderPoolId = p.poolId;
+        pools["你"].push(discarded);
+        isWaitingPlayerDiscard = false;
+        
+        renderPlayerHand();
+        renderSinglePool("你", p.poolId); 
+        
+        setTimeout(() => { interceptSystem(discarded, 0); }, 50);
+    }
+
+    function hideAllActionButtons() {
+        document.getElementById('btnWin').style.display = 'none';
+        document.getElementById('btnTing').style.display = 'none';
+        document.getElementById('btnEat').style.display = 'none';
+        document.getElementById('btnPong').style.display = 'none';
+        document.getElementById('btnGang').style.display = 'none';
+        document.getElementById('btnPass').style.display = 'none';
+    }
+
+    function nextTurn() { 
+        if (isGameOver) return;
+        currentTurn = (currentTurn + 1) % 4; 
+        startTurn(); 
+    }
+
+    function endGame(endMsg) {
+        isGameOver = true;
+        isWaitingPlayerDiscard = false;
+        isAwaitingTingChoice = false;
+        document.getElementById('msg').innerText = endMsg;
+        
+        hideAllActionButtons();
+        document.getElementById('actionPanel').style.display = 'flex';
+        document.getElementById('btnRestart').style.display = 'block';
+    }
+
+    function checkHu(currentHand) {
+        let tiles = currentHand.map(t => t.name);
+        let counts = {};
+        tiles.forEach(t => counts[t] = (counts[t] || 0) + 1);
+
+        for (let tile in counts) {
+            if (counts[tile] >= 2) {
+                let remainingCounts = { ...counts };
+                remainingCounts[tile] -= 2;
+                if (remainingCounts[tile] === 0) delete remainingCounts[tile];
+                if (canFormMelds(remainingCounts)) return true; 
+            }
+        }
+        return false;
+    }
+
+    function canFormMelds(counts) {
+        if (Object.keys(counts).length === 0) return true;
+        let firstTile = Object.keys(counts).sort((a,b) => {
+            let aSuit = a.includes('萬')?'萬':a.includes('筒')?'筒':a.includes('條')?'條':'字';
+            let bSuit = b.includes('萬')?'萬':b.includes('筒')?'筒':b.includes('條')?'條':'字';
+            if(suitOrder[aSuit] !== suitOrder[bSuit]) return suitOrder[aSuit] - suitOrder[bSuit];
+            let aVal = parseInt(a) || 10;
+            let bVal = parseInt(b) || 10;
+            return aVal - bVal;
+        })[0];
+
+        if (counts[firstTile] >= 3) {
+            let nextCounts = { ...counts };
+            nextCounts[firstTile] -= 3;
+            if (nextCounts[firstTile] === 0) delete nextCounts[firstTile];
+            if (canFormMelds(nextCounts)) return true;
+        }
+
+        if (!firstTile.includes('東') && !firstTile.includes('南') && !firstTile.includes('西') && !firstTile.includes('北') && !firstTile.includes('中') && !firstTile.includes('發') && !firstTile.includes('白')) {
+            let num = parseInt(firstTile);
+            let suit = firstTile.replace(num, '');
+            let tile2 = (num + 1) + suit;
+            let tile3 = (num + 2) + suit;
+
+            if (counts[tile2] > 0 && counts[tile3] > 0) {
+                let nextCounts = { ...counts };
+                nextCounts[firstTile]--; if (nextCounts[firstTile] === 0) delete nextCounts[firstTile];
+                nextCounts[tile2]--; if (nextCounts[tile2] === 0) delete nextCounts[tile2];
+                nextCounts[tile3]--; if (nextCounts[tile3] === 0) delete nextCounts[tile3];
+                if (canFormMelds(nextCounts)) return true;
+            }
+        }
+        return false; 
+    }
+
+    function renderPlayerHand(newTileIndex = -1) {
+        const handDiv = document.getElementById('hand');
+        handDiv.innerHTML = '';
+        players[0].hand.forEach((tile, index) => {
+            const el = document.createElement('div');
+            el.className = 'tile';
+            el.innerText = tileUnicode[tile.code] || tile.name;
+            
+            if (index === newTileIndex) el.classList.add('new-drawn');
+            
+            if (isPlayerTingModeActive && playerHandTingData && playerHandTingData[index]) {
+                const tag = document.createElement('span');
+                tag.className = 'ting-tag';
+                tag.innerText = '聽';
+                el.appendChild(tag);
+            }
+
+            if (players[0].isTingLocked || isAwaitingTingChoice) { 
+                el.classList.add('locked'); 
+            }
+            
+            el.onclick = () => playerDiscard(index);
+            handDiv.appendChild(el);
+        });
+    }
+
+    function renderMelds() {
+        const meldsDiv = document.getElementById('meldsArea');
+        meldsDiv.innerHTML = '';
+        players[0].melds.forEach(group => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'meld-group';
+            group.forEach(tile => {
+                const el = document.createElement('div');
+                el.className = 'tile';
+                el.innerText = tileUnicode[tile.code] || tile.name;
+                groupDiv.appendChild(el);
+            });
+            meldsDiv.appendChild(groupDiv);
+        });
+    }
+
+    function renderSinglePool(owner, poolId) {
+        const poolDiv = document.getElementById(poolId);
+        if (!poolDiv) return;
+        poolDiv.innerHTML = '';
+        
+        if (pools[owner]) {
+            pools[owner].forEach(tile => {
+                const el = document.createElement('div');
+                el.className = 'pool-tile';
+                el.innerText = tileUnicode[tile.code] || tile.name;
+                
+                if (tile === lastDiscardedTile && poolId === lastDiscarderPoolId) {
+                    el.classList.add('last-shot');
+                }
+                poolDiv.appendChild(el);
+            });
+            poolDiv.scrollTop = poolDiv.scrollHeight;
+        }
+    }
+
+    function updateTurnHighlight() {
+        for(let p=1; p<=3; p++) {
+            let box = document.getElementById(players[p].boxId);
+            if (currentTurn === p) {
+                box.classList.add('active');
+            } else {
+                box.classList.remove('active');
+            }
+        }
+    }
+
+    function updateUI() { 
+        renderPlayerHand(); 
+        renderMelds(); 
+        players.forEach(p => renderSinglePool(p.name, p.poolId));
+    }
+
+    startGame();
+</script>
+</body>
+</html>

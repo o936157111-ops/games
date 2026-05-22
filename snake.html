@@ -3,55 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>貪食蛇 - 完美比例適配</title>
+    <title>貪食蛇 - 全框架高度適配</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+        * { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
 
         body {
             background-color: #222;
+            height: 100vh;
+            width: 100vw;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
+            overflow: hidden; /* 強制不產生捲軸 */
         }
 
-        /* 核心關鍵：利用 aspect-ratio 讓容器隨高度自動縮放寬度 */
+        /* 整個手機外框：利用 vh 確保高度永遠適合手機螢幕 */
         .phone-container {
+            height: 95vh;     /* 佔據螢幕 95% 高度 */
+            width: auto;      /* 寬度自動配合高度 */
+            aspect-ratio: 9 / 18; /* 模擬手機長寬比例 */
             background-color: #333;
             border: 4px solid #444;
             border-radius: 20px;
-            padding: 15px;
-            height: 90vh; /* 佔據螢幕 90% 高度 */
-            aspect-ratio: 9 / 18; /* 模擬手機長寬比，確保比例正常 */
+            padding: 2vh;     /* 使用 vh 做 padding，確保比例一致 */
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            gap: 2vh;
+        }
+
+        /* 綠色畫面：佔據上方比例 */
+        .screen {
+            flex: 1; /* 彈性佔據空間 */
+            background-color: #8fa382;
+            border: 4px solid #111;
+            display: flex;
+            justify-content: center;
             align-items: center;
         }
 
-        .screen {
-            background-color: #8fa382;
-            border: 6px solid #111;
-            width: 100%;
-            aspect-ratio: 1 / 1; /* 螢幕區維持正方形 */
-            position: relative;
-        }
+        canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
 
-        canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
-
-        .btn-area { width: 100%; display: flex; flex-direction: column; gap: 10px; }
-        
-        .btn { padding: 10px; background: #555; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+        /* 按鈕區：保持在下方 */
+        .btn-area { display: flex; flex-direction: column; gap: 1vh; }
+        .btn { padding: 1.5vh; background: #555; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
 
         .d-pad { 
             display: grid; 
             grid-template-columns: repeat(3, 1fr); 
-            gap: 10px; 
-            width: 80%; 
+            gap: 1vh; 
         }
-        .d-btn { background: #222; color: #fff; border: 2px solid #444; border-radius: 50%; aspect-ratio: 1/1; }
+        .d-btn { 
+            background: #222; color: #fff; border: 2px solid #444; border-radius: 50%; 
+            aspect-ratio: 1/1; font-size: 2vh;
+        }
     </style>
 </head>
 <body>
@@ -62,16 +66,17 @@
     </div>
     <div class="btn-area">
         <button id="startBtn" class="btn">START / PAUSE</button>
-    </div>
-    <div class="d-pad">
-        <button class="d-btn" style="grid-column: 2;" data-dir="UP">▲</button>
-        <button class="d-btn" style="grid-column: 1; grid-row: 2;" data-dir="LEFT">◀</button>
-        <button class="d-btn" style="grid-column: 3; grid-row: 2;" data-dir="RIGHT">▶</button>
-        <button class="d-btn" style="grid-column: 2; grid-row: 3;" data-dir="DOWN">▼</button>
+        <div class="d-pad">
+            <button class="d-btn" style="grid-column: 2;" data-dir="UP">▲</button>
+            <button class="d-btn" style="grid-column: 1; grid-row: 2;" data-dir="LEFT">◀</button>
+            <button class="d-btn" style="grid-column: 3; grid-row: 2;" data-dir="RIGHT">▶</button>
+            <button class="d-btn" style="grid-column: 2; grid-row: 3;" data-dir="DOWN">▼</button>
+        </div>
     </div>
 </div>
 
 <script>
+    // 遊戲邏輯與之前保持一致
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let snake = [{x:10, y:10}], food = {x:5, y:5}, dx=1, dy=0, nextDir={x:1, y:0}, isPaused=true;
@@ -83,25 +88,27 @@
         ctx.fillStyle = '#1a2414'; ctx.fillRect(food.x*20+2, food.y*20+2, 16, 16);
     }
 
-    // 簡單遊戲迴圈
     setInterval(() => {
         if(isPaused) return;
-        dx = nextDir.x; dy = nextDir.y;
-        let head = {x: snake[0].x+dx, y: snake[0].y+dy};
-        if(head.x<0||head.x>19||head.y<0||head.y>19) { isPaused=true; return; }
-        snake.unshift(head);
-        if(head.x===food.x && head.y===food.y) food={x:Math.floor(Math.random()*20), y:Math.floor(Math.random()*20)};
-        else snake.pop();
+        let head = {x: snake[0].x+nextDir.x, y: snake[0].y+nextDir.y};
+        if(head.x<0||head.x>19||head.y<0||head.y>19 || snake.some(s => s.x===head.x && s.y===head.y)) {
+            isPaused=true; snake=[{x:10, y:10}]; nextDir={x:1, y:0};
+        } else {
+            snake.unshift(head);
+            if(head.x===food.x && head.y===food.y) food={x:Math.floor(Math.random()*20), y:Math.floor(Math.random()*20)};
+            else snake.pop();
+        }
         draw();
-    }, 150);
+    }, 200);
 
     document.getElementById('startBtn').onclick = () => isPaused = !isPaused;
     document.querySelectorAll('.d-btn').forEach(b => b.onclick = () => {
         const d = b.getAttribute('data-dir');
         if(d==='UP'&&dy!==1) nextDir={x:0, y:-1};
-        if(d==='DOWN'&&dy!==-1) nextDir={x:0, y:1};
-        if(d==='LEFT'&&dx!==1) nextDir={x:-1, y:0};
-        if(d==='RIGHT'&&dx!==-1) nextDir={x:1, y:0};
+        else if(d==='DOWN'&&dy!==-1) nextDir={x:0, y:1};
+        else if(d==='LEFT'&&dx!==1) nextDir={x:-1, y:0};
+        else if(d==='RIGHT'&&dx!==-1) nextDir={x:1, y:0};
+        dx = nextDir.x; dy = nextDir.y;
     });
     draw();
 </script>

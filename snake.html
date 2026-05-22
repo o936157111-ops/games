@@ -3,65 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>貪食蛇 - 手機友善放大版</title>
+    <title>貪食蛇 - 最終解決版</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
 
         body {
             background-color: #222;
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
             padding: 10px;
+            overflow: hidden;
         }
 
-        /* 放大容器比例 */
         .phone-container {
-            height: 95vh;            /* 盡量填滿手機垂直空間 */
-            width: 100%;             /* 寬度盡量展開 */
-            max-width: 450px;        /* 設定合適的最大寬度 */
+            width: 100%;
+            max-width: 350px;
+            max-height: 95vh;
             background-color: #333;
             border: 6px solid #444;
             border-radius: 25px;
-            padding: 3vh;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            gap: 2vh;
+            gap: 10px;
+            overflow: hidden;
         }
 
         .screen {
-            flex: 2; /* 讓遊戲區域佔更大比例 */
+            width: 100%;
+            aspect-ratio: 1 / 1; 
             background-color: #8fa382;
             border: 8px solid #111;
             display: flex;
             justify-content: center;
             align-items: center;
+            overflow: hidden;
+            flex-shrink: 1;
         }
 
-        canvas { width: 100%; height: auto; display: block; }
+        canvas { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: contain; 
+            display: block;
+        }
 
-        .btn-area { width: 100%; display: flex; flex-direction: column; gap: 1.5vh; }
+        .btn-area { 
+            width: 100%; 
+            flex-shrink: 0; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 8px; 
+        }
         
-        /* START 按鈕明顯放大 */
         .btn { 
             width: 100%; 
-            padding: 2vh; 
+            padding: 12px; 
             background: #555; 
             border: none; 
             border-radius: 12px; 
             color: white; 
-            font-size: 5vw; /* 依螢幕寬度放大字體 */
+            font-size: 16px; 
             font-weight: bold; 
+            cursor: pointer;
         }
 
-        /* D-pad 重新設計：按鈕變大，間距拉開 */
         .d-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 3vw;
-            padding: 1vh;
+            gap: 8px;
+            justify-items: center;
         }
 
         .d-btn {
@@ -69,13 +82,14 @@
             color: #fff;
             border: 3px solid #555;
             border-radius: 50%;
-            width: 18vw;  /* 按鈕寬度變大 */
-            height: 18vw;
-            font-size: 8vw; /* 方向箭頭符號放大 */
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 6px 0 #111;
+            box-shadow: 0 3px 0 #111;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -97,7 +111,6 @@
 </div>
 
 <script>
-    // [這裡請保留原有的 JavaScript 遊戲邏輯，完全不需要更動]
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let snake = [{x:10, y:10}], food = {x:5, y:5}, nextDir={x:1, y:0}, isPaused=true;

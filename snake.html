@@ -3,46 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>貪食蛇 - 手機安全區優化版</title>
+    <title>經典復古貪食蛇 - 完美比例版</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
 
         body {
             background-color: #222;
-            width: 100vw;
             height: 100vh;
-            /* 讓身體適應環境安全區 */
-            padding-bottom: env(safe-area-inset-bottom);
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
         }
 
+        /* 這是你截圖中的「整個長方形框架」 */
         .phone-container {
-            /* 關鍵：使用 calc 避開底部安全區 */
-            height: calc(95vh - env(safe-area-inset-bottom));
-            width: 95vw;
-            max-width: 400px;
-            background: #333;
+            /* 使用 vmin 確保在寬或高較短的邊上自動縮放，維持比例 */
+            height: 90vmin;
+            width: calc(90vmin * 0.55); /* 寬度是高度的約 55% */
+            background-color: #333;
             border: 4px solid #444;
             border-radius: 20px;
-            padding: 15px;
+            padding: 2vmin;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 2vmin;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
-        .screen { flex: 1; background: #8fa382; border: 4px solid #111; }
-        canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+        .screen {
+            background-color: #8fa382;
+            border: 4px solid #111;
+            width: 100%;
+            aspect-ratio: 1 / 1.2; /* 螢幕區域比例 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-        .btn-area { display: flex; flex-direction: column; gap: 8px; }
-        .btn { padding: 12px; background: #555; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        canvas { width: 100%; height: 100%; object-fit: contain; }
 
-        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-bottom: 5px; }
+        .btn-area { display: flex; flex-direction: column; gap: 1vmin; }
+        .btn { padding: 1.5vmin; background: #555; color: #fff; border: none; border-radius: 8px; font-weight: bold; }
+
+        .d-pad { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); 
+            gap: 1vmin; 
+        }
         .d-btn { 
             background: #222; color: #fff; border: 2px solid #444; 
-            border-radius: 50%; aspect-ratio: 1/1; cursor: pointer; font-size: 1.2rem;
+            border-radius: 50%; aspect-ratio: 1/1; font-size: 2vmin; 
         }
     </style>
 </head>
@@ -75,24 +86,25 @@
         ctx.fillStyle = '#1a2414'; ctx.fillRect(food.x*20+2, food.y*20+2, 16, 16);
     }
 
-    function setDirection(dir) {
+    function setDir(dir) {
         if(isPaused) return;
-        if(dir==='UP' && nextDir.y !== 1) nextDir = {x:0, y:-1};
-        else if(dir==='DOWN' && nextDir.y !== -1) nextDir = {x:0, y:1};
-        else if(dir==='LEFT' && nextDir.x !== 1) nextDir = {x:-1, y:0};
-        else if(dir==='RIGHT' && nextDir.x !== -1) nextDir = {x:1, y:0};
+        if(dir==='UP'&&nextDir.y!==1) nextDir={x:0, y:-1};
+        else if(dir==='DOWN'&&nextDir.y!==-1) nextDir={x:0, y:1};
+        else if(dir==='LEFT'&&nextDir.x!==1) nextDir={x:-1, y:0};
+        else if(dir==='RIGHT'&&nextDir.x!==-1) nextDir={x:1, y:0};
     }
 
-    // 電腦鍵盤事件
-    window.addEventListener('keydown', (e) => {
-        switch(e.key) {
-            case 'ArrowUp': setDirection('UP'); break;
-            case 'ArrowDown': setDirection('DOWN'); break;
-            case 'ArrowLeft': setDirection('LEFT'); break;
-            case 'ArrowRight': setDirection('RIGHT'); break;
-            case ' ': isPaused = !isPaused; break;
-        }
+    // 鍵盤與按鈕共用邏輯
+    window.addEventListener('keydown', e => {
+        if(e.key==='ArrowUp') setDir('UP');
+        if(e.key==='ArrowDown') setDir('DOWN');
+        if(e.key==='ArrowLeft') setDir('LEFT');
+        if(e.key==='ArrowRight') setDir('RIGHT');
+        if(e.key===' ') isPaused = !isPaused;
     });
+
+    document.getElementById('startBtn').onclick = () => isPaused = !isPaused;
+    document.querySelectorAll('.d-btn').forEach(b => b.onclick = () => setDir(b.getAttribute('data-dir')));
 
     setInterval(() => {
         if(isPaused) return;
@@ -107,10 +119,6 @@
         draw();
     }, 200);
 
-    document.getElementById('startBtn').onclick = () => isPaused = !isPaused;
-    document.querySelectorAll('.d-btn').forEach(b => {
-        b.onclick = () => setDirection(b.getAttribute('data-dir'));
-    });
     draw();
 </script>
 </body>

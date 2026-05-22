@@ -3,82 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>經典小精靈 Pacman - 手機畫面極限優化版</title>
+    <title>經典小精靈 Pacman - 手機穩定版</title>
     <style>
         * { box-sizing: border-box; user-select: none; -webkit-user-select: none; margin: 0; padding: 0; }
-        body { background-color: #111; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; min-height: 100vh; overflow: hidden; padding: 5px; }
-        #gameContainer { position: relative; background: #000; padding: 10px; border: 3px solid #333; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.6); display: flex; flex-direction: column; align-items: center; margin-top: 5px; max-width: 100%; }
-        #hud { width: 100%; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; letter-spacing: 1px; margin-bottom: 8px; font-family: monospace; color: #00ffcc; }
-        #stageSelect { background: #222; color: #ffff00; border: 1px solid #444; padding: 1px 4px; border-radius: 4px; font-family: monospace; font-weight: bold; cursor: pointer; }
+        body { background-color: #111; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 5px; }
+        #gameContainer { position: relative; background: #000; padding: 10px; border: 3px solid #333; border-radius: 12px; display: flex; flex-direction: column; align-items: center; margin-top: 5px; }
+        #hud { width: 100%; display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; color: #00ffcc; font-family: monospace; }
+        #canvasWrapper { position: relative; }
         canvas { display: block; background: #000; border-radius: 4px; }
         #gameOverlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; border-radius: 4px; }
-        #overlayTitle { font-size: 26px; color: #ffff00; margin-bottom: 8px; font-weight: bold; letter-spacing: 2px; }
-        #overlaySub { font-size: 12px; color: #bbb; margin-bottom: 20px; text-align: center; line-height: 1.5; }
-        #startBtn { padding: 8px 24px; font-size: 14px; font-weight: bold; background: #ffff00; color: #000; border: none; border-radius: 20px; cursor: pointer; }
-        #controlsContainer { margin-top: 12px; display: flex; justify-content: center; align-items: center; width: 130px; height: 130px; position: relative; }
-        .btn { position: absolute; width: 42px; height: 42px; background: #222; border: 2px solid #444; color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 3px 0 #111; }
+        #overlayTitle { font-size: 26px; color: #ffff00; margin-bottom: 15px; font-weight: bold; }
+        #startBtn { padding: 10px 25px; font-size: 16px; font-weight: bold; background: #ffff00; color: #000; border: none; border-radius: 20px; cursor: pointer; }
+        #controlsContainer { margin-top: 12px; display: flex; justify-content: center; width: 130px; height: 130px; position: relative; }
+        .btn { position: absolute; width: 42px; height: 42px; background: #222; border: 2px solid #444; color: #fff; display: flex; align-items: center; justify-content: center; border-radius: 8px; box-shadow: 0 3px 0 #111; }
         .btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #111; background: #333; }
         #btnUp { top: 0; left: 44px; } #btnDown { bottom: 0; left: 44px; } #btnLeft { left: 0; top: 44px; } #btnRight { right: 0; top: 44px; }
     </style>
 </head>
 <body>
 
-    <div id="gameContainer">
-        <div id="hud">
-            <span id="scoreTxt">SCORE: 0</span>
-            <span>STAGE: <select id="stageSelect">
-                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-                <option value="10">10</option>
-            </select></span>
-            <span id="dotsTxt">DOTS: 0</span>
-        </div>
-        
-        <div id="canvasWrapper">
-            <canvas id="gameCanvas" width="280" height="280"></canvas>
-            <div id="gameOverlay">
-                <div id="overlayTitle">PAC-MAN</div>
-                <div id="overlaySub">挑戰 10 大迷宮！<br>吃掉所有豆子即可晉級。</div>
-                <button id="startBtn">START GAME</button>
-            </div>
-        </div>
-
-        <div id="controlsContainer">
-            <div class="btn" id="btnUp">▲</div>
-            <div class="btn" id="btnLeft">◀</div>
-            <div class="btn" id="btnRight">▶</div>
-            <div class="btn" id="btnDown">▼</div>
+<div id="gameContainer">
+    <div id="hud">
+        <span id="scoreTxt">SCORE: 0</span>
+        <span id="dotsTxt">DOTS: 0</span>
+    </div>
+    <div id="canvasWrapper">
+        <canvas id="gameCanvas" width="280" height="280"></canvas>
+        <div id="gameOverlay">
+            <div id="overlayTitle">PAC-MAN</div>
+            <button id="startBtn">START GAME</button>
         </div>
     </div>
+    <div id="controlsContainer">
+        <div class="btn" id="btnUp">▲</div>
+        <div class="btn" id="btnLeft">◀</div>
+        <div class="btn" id="btnRight">▶</div>
+        <div class="btn" id="btnDown">▼</div>
+    </div>
+</div>
 
 <script>
+    // 你的地圖資料
+    const maps = [
+        [[1,1,1,1,1,1,1,1,1,1,1,1,1,1],[1,3,0,0,0,0,1,1,0,0,0,0,3,1],[1,0,1,1,1,0,1,1,0,1,1,1,0,1],[1,0,1,2,2,0,0,0,0,2,2,1,0,1],[1,0,1,0,1,1,2,2,1,1,0,1,0,1],[1,0,0,0,1,2,2,2,2,1,0,0,0,1],[1,1,1,0,1,2,2,2,2,1,0,1,1,1],[1,1,1,0,1,2,2,2,2,1,0,1,1,1],[1,0,0,0,1,1,1,1,1,1,0,0,0,1],[1,0,1,0,0,0,0,0,0,0,0,1,0,1],[1,0,1,1,1,0,1,1,0,1,1,1,0,1],[1,0,1,2,2,0,1,1,0,2,2,1,0,1],[1,3,0,0,0,0,0,0,0,0,0,0,3,1],[1,1,1,1,1,1,1,1,1,1,1,1,1,1]]
+    ];
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('startBtn');
-    const gameOverlay = document.getElementById('gameOverlay');
-    const overlayTitle = document.getElementById('overlayTitle');
-    const overlaySub = document.getElementById('overlaySub');
-    const scoreTxt = document.getElementById('scoreTxt');
-    const stageSelect = document.getElementById('stageSelect');
-    const dotsTxt = document.getElementById('dotsTxt');
-
-    let score = 0, stage = 1, gameOver = true, isStageClearing = false, animationId = null;
-    const TILE_SIZE = 20, MAP_SIZE = 14; 
-
-    // --- (省略原有的 maps 數據結構，請保留你原檔中的 maps 陣列) ---
-    // (將你的原檔案 maps 內容貼在此處即可)
-    const maps = [/* ...你的地圖資料... */];
-
-    // --- 關鍵修改：加入 FPS 控制變數 ---
+    
+    let gameOver = true;
     let lastFrameTime = 0;
-    const FPS = 60;
-    const interval = 1000 / FPS;
+    const interval = 1000 / 60; // 強制固定 60 FPS
 
+    function update() { /* 你的遊戲邏輯 update 內容 */ }
+    function draw() { /* 你的遊戲繪圖 draw 內容 */ }
+
+    // 穩定的動畫迴圈
     function animate(timestamp) {
         if (gameOver) return;
-        
-        animationId = requestAnimationFrame(animate);
         
         const elapsed = timestamp - lastFrameTime;
         if (elapsed > interval) {
@@ -86,15 +69,20 @@
             update();
             draw();
         }
+        requestAnimationFrame(animate);
     }
 
-    // --- 其餘邏輯保持不變 ---
-    function initGame() { score = 0; stage = parseInt(stageSelect.value); isStageClearing = false; startNextStage(true); }
-    function restartCurrentStage() { if(animationId) cancelAnimationFrame(animationId); gameOver = false; isStageClearing = false; resetCharactersPosition(); gameOverlay.style.visibility = 'hidden'; gameOverlay.style.display = 'none'; animationId = requestAnimationFrame(animate); }
-    // ... (其他原有的 function 如 update, draw, resetCharactersPosition 等維持不變) ...
+    function startGame() {
+        gameOver = false;
+        document.getElementById('gameOverlay').style.display = 'none';
+        lastFrameTime = performance.now();
+        requestAnimationFrame(animate);
+    }
 
-    // 記得在 bindControl 之後啟動 startBtn 的點擊監聽
-    startBtn.onclick = initGame;
+    startBtn.addEventListener('click', startGame);
+    
+    // 初始化繪圖
+    draw();
 </script>
 </body>
 </html>

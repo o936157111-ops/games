@@ -536,7 +536,6 @@
                     if(idx === -1) idx = p.hand.length - 1;
                     npcDiscard(p, idx);
                 } else {
-                    // 【修正重點】進入暗槓/加槓檢查
                     let npcGangOpt = checkNpcSelfGang(p);
                     if(npcGangOpt) {
                         executeNpcGang(p, npcGangOpt);
@@ -594,19 +593,14 @@
         });
     }
 
-    // 【修正防作弊重點】：修正 NPC 檢查自己暗槓與加槓的嚴格邏輯，杜絕無中生有
     function checkNpcSelfGang(npc) {
         let counts = {};
         npc.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
-        
-        // 只有「4張都在手牌內」才允許暗槓！如果之前有打出過，手牌計數絕對不可能達到 4。
         for (let name in counts) {
             if (counts[name] === 4) {
                 return { type: 'AN_GANG', name: name };
             }
         }
-        
-        // 加槓：手牌裡有第 4 張，且桌面上已經有自己「碰」的 3 張碰牌組
         for (let t of npc.hand) {
             if (npc.melds.some(m => m.length === 3 && m[0].name === t.name && m[1].name === t.name)) {
                 return { type: 'JIA_GANG', name: t.name };
@@ -675,7 +669,8 @@
         sortHand(npc.hand);
         
         lastDiscardedTile = discarded;
-        lastDiscarderPoolId = p.poolId; // 保留原綁定
+        // 【關鍵 Bug 修正】：將原本誤植的 p.poolId 修改為正確的 npc.poolId
+        lastDiscarderPoolId = npc.poolId; 
         pools[npc.name].push(discarded);
         
         if(!npc.isTingLocked) {

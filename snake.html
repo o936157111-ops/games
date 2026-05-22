@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>貪食蛇 - 最終解決版</title>
+    <title>貪食蛇 - 最終完美版</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-
-        body {
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
             background-color: #222;
-            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px;
-            overflow: hidden;
         }
 
         .phone-container {
-            width: 100%;
-            max-width: 350px;
-            max-height: 95vh;
+            width: 90vw;
+            max-width: 400px;
+            /* 關鍵：設定高度為 95vh，同時確保內容不會溢出 */
+            height: 95vh;
+            max-height: 800px;
             background-color: #333;
             border: 6px solid #444;
             border-radius: 25px;
@@ -28,53 +28,35 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            overflow: hidden;
         }
 
         .screen {
             width: 100%;
-            aspect-ratio: 1 / 1; 
+            aspect-ratio: 1 / 1;
             background-color: #8fa382;
             border: 8px solid #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            /* 讓遊戲區彈性縮放，但不要超過剩餘空間 */
+            flex: 1;
+            min-height: 0; 
             overflow: hidden;
-            flex-shrink: 1;
         }
 
-        canvas { 
-            width: 100%; 
-            height: 100%; 
-            object-fit: contain; 
-            display: block;
-        }
+        canvas { width: 100%; height: 100%; display: block; object-fit: contain; }
 
-        .btn-area { 
-            width: 100%; 
-            flex-shrink: 0; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 8px; 
-        }
-        
-        .btn { 
-            width: 100%; 
-            padding: 12px; 
-            background: #555; 
-            border: none; 
-            border-radius: 12px; 
-            color: white; 
-            font-size: 16px; 
-            font-weight: bold; 
-            cursor: pointer;
+        .control-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            /* 嚴格限制操作區高度 */
+            height: 100px;
+            flex-shrink: 0;
         }
 
         .d-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-            justify-items: center;
+            gap: 5px;
+            align-items: center;
         }
 
         .d-btn {
@@ -82,14 +64,23 @@
             color: #fff;
             border: 3px solid #555;
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
+            width: 40px;
+            height: 40px;
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 3px 0 #111;
             cursor: pointer;
+            font-size: 16px;
+        }
+
+        #startBtn {
+            background: #555;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            height: 100%;
         }
     </style>
 </head>
@@ -99,14 +90,15 @@
     <div class="screen">
         <canvas id="gameCanvas" width="400" height="400"></canvas>
     </div>
-    <div class="btn-area">
-        <button id="startBtn" class="btn">START / PAUSE</button>
+    
+    <div class="control-area">
         <div class="d-pad">
             <button class="d-btn" style="grid-column: 2;" data-dir="UP">▲</button>
             <button class="d-btn" style="grid-column: 1; grid-row: 2;" data-dir="LEFT">◀</button>
             <button class="d-btn" style="grid-column: 3; grid-row: 2;" data-dir="RIGHT">▶</button>
             <button class="d-btn" style="grid-column: 2; grid-row: 3;" data-dir="DOWN">▼</button>
         </div>
+        <button id="startBtn">START / PAUSE</button>
     </div>
 </div>
 

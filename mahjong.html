@@ -524,6 +524,7 @@
                 if (isGameOver) return;
                 const newTile = deck.pop();
                 p.hand.push(newTile); 
+                // 【終極正義修正點 1】：先讓牌入組並執行絕對排序，讓結構清空，才進入槓牌大檢查
                 sortHand(p.hand);
 
                 if (checkHu(p.hand)) {
@@ -536,6 +537,7 @@
                     if(idx === -1) idx = p.hand.length - 1;
                     npcDiscard(p, idx);
                 } else {
+                    // 【終極正義修正點 2】：進行最嚴格的實名數量核對暗槓檢查
                     let npcGangOpt = checkNpcSelfGang(p);
                     if(npcGangOpt) {
                         executeNpcGang(p, npcGangOpt);
@@ -593,14 +595,29 @@
         });
     }
 
+    // 【終極正義修正點 3】：建立跨池防老千嚴格機制，確保暗槓必須全場邏輯無暇
     function checkNpcSelfGang(npc) {
         let counts = {};
         npc.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
+        
         for (let name in counts) {
             if (counts[name] === 4) {
+                // 實名制檢查：看全場所有人（包括你、其他NPC）的海底棄牌堆裡，到底有沒有這張牌！
+                let discardCount = 0;
+                for (let owner in pools) {
+                    discardCount += pools[owner].filter(t => t.name === name).length;
+                }
+                
+                // 如果海底已經有打出去了，手牌卻還號稱有4張？直接判定為非法老千！跳過！
+                if (discardCount > 0) {
+                    console.log(`[正義天眼] 攔截老千！${npc.name} 企圖暗槓 ${name}，但海底已有 ${discardCount} 張！`);
+                    continue; 
+                }
+                
                 return { type: 'AN_GANG', name: name };
             }
         }
+        
         for (let t of npc.hand) {
             if (npc.melds.some(m => m.length === 3 && m[0].name === t.name && m[1].name === t.name)) {
                 return { type: 'JIA_GANG', name: t.name };
@@ -669,7 +686,6 @@
         sortHand(npc.hand);
         
         lastDiscardedTile = discarded;
-        // 【關鍵 Bug 修正】：將原本誤植的 p.poolId 修改為正確的 npc.poolId
         lastDiscarderPoolId = npc.poolId; 
         pools[npc.name].push(discarded);
         
@@ -689,7 +705,6 @@
     function interceptSystem(tile, shooterIndex) {
         if (isGameOver) return;
 
-        // 1. 胡牌放銃檢查
         for (let i = 1; i <= 3; i++) {
             let nextIdx = (shooterIndex + i) % 4;
             let checker = players[nextIdx];
@@ -712,7 +727,6 @@
             }
         }
 
-        // 2. 碰牌與明槓檢查
         for (let i = 1; i <= 3; i++) {
             let nextIdx = (shooterIndex + i) % 4;
             let checker = players[nextIdx];
@@ -787,7 +801,6 @@
             }
         }
 
-        // 3. 吃牌檢查
         let nextPlayerIdx = (shooterIndex + 1) % 4;
         let nextPlayer = players[nextPlayerIdx];
         if (nextPlayer.isNPC && !nextPlayer.isTingLocked && tile.suit !== '字') {

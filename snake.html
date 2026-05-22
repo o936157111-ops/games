@@ -2,19 +2,32 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>貪食蛇 - 完整修復版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>貪食蛇 - 手機安全區優化版</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #222; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; touch-action: manipulation; }
+
+        body {
+            background-color: #222;
+            width: 100vw;
+            height: 100vh;
+            /* 讓身體適應環境安全區 */
+            padding-bottom: env(safe-area-inset-bottom);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
 
         .phone-container {
-            height: 95vh;
-            aspect-ratio: 1 / 2;
+            /* 關鍵：使用 calc 避開底部安全區 */
+            height: calc(95vh - env(safe-area-inset-bottom));
+            width: 95vw;
+            max-width: 400px;
             background: #333;
             border: 4px solid #444;
             border-radius: 20px;
-            padding: 10px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -23,13 +36,13 @@
         .screen { flex: 1; background: #8fa382; border: 4px solid #111; }
         canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
 
-        .btn-area { display: flex; flex-direction: column; gap: 5px; }
-        .btn { padding: 10px; background: #555; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+        .btn-area { display: flex; flex-direction: column; gap: 8px; }
+        .btn { padding: 12px; background: #555; color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+        .d-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-bottom: 5px; }
         .d-btn { 
             background: #222; color: #fff; border: 2px solid #444; 
-            border-radius: 50%; aspect-ratio: 1/1; cursor: pointer; 
+            border-radius: 50%; aspect-ratio: 1/1; cursor: pointer; font-size: 1.2rem;
         }
     </style>
 </head>
@@ -62,7 +75,6 @@
         ctx.fillStyle = '#1a2414'; ctx.fillRect(food.x*20+2, food.y*20+2, 16, 16);
     }
 
-    // 統一的方向變更邏輯
     function setDirection(dir) {
         if(isPaused) return;
         if(dir==='UP' && nextDir.y !== 1) nextDir = {x:0, y:-1};
@@ -71,7 +83,7 @@
         else if(dir==='RIGHT' && nextDir.x !== -1) nextDir = {x:1, y:0};
     }
 
-    // 鍵盤監聽（修復點）
+    // 電腦鍵盤事件
     window.addEventListener('keydown', (e) => {
         switch(e.key) {
             case 'ArrowUp': setDirection('UP'); break;

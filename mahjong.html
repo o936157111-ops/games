@@ -36,10 +36,10 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            width: 100%;
-            max-width: 480px;
+            width: 95%;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 6px 4px;
+            padding: 10pxx;
             position: relative;
             min-height: 0; 
         }
@@ -461,7 +461,7 @@
             if(p.isNPC) {
                 setNpcStatusStyle(p, '-', 'act-discard');
                 document.getElementById(p.boxId).classList.remove('ting-danger');
-                document.getElementById(p.barId).innerText = "無落地";
+                document.getElementById(p.barId).innerText = "";
                 document.getElementById(p.barId).style.color = "#a5d6a7";
             }
         });
@@ -1097,7 +1097,7 @@
         renderMelds();
     }
 
-  function executeEat(opt) {
+    function executeEat(opt) {
         let hand = players[0].hand;
         let tile = lastDiscardedTile;
         let shooterObj = players[currentTurn];
@@ -1109,30 +1109,10 @@
         pools[shooterObj.name].pop(); 
         renderSinglePool(shooterObj.name, shooterObj.poolId);
 
-        // 【修正核心】嚴格搜尋正確的花色與數值，並避免索引偏移問題
         let v1 = opt[0], v2 = opt[1];
-        
-        // 1. 找到第一張牌的索引並移除
-        let idx1 = hand.findIndex(t => t.suit === tile.suit && t.val === v1);
-        if (idx1 === -1) {
-            console.error("找不到組合牌 1");
-            return;
-        }
-        let t1 = hand.splice(idx1, 1)[0];
-        
-        // 2. 找到第二張牌的索引（在移除第一張後重新計算索引）並移除
-        let idx2 = hand.findIndex(t => t.suit === tile.suit && t.val === v2);
-        if (idx2 === -1) {
-            console.error("找不到組合牌 2");
-            // 補救措施：若發生錯誤，將第一張牌補回
-            hand.push(t1);
-            sortHand(hand);
-            return;
-        }
-        let t2 = hand.splice(idx2, 1)[0];
-        
-        // 3. 組合並加入 Meld
-        let group = [t1, tile, t2].sort((a,b) => a.val - b.val);
+        let t1 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === v1), 1)[0];
+        let t2 = hand.splice(hand.findIndex(t => t.suit === tile.suit && t.val === v2), 1)[0];
+        let group = [t1, tile, t2].sort((a,b)=>a.val-b.val);
         players[0].melds.push(group);
         
         currentTurn = 0;
@@ -1152,6 +1132,7 @@
         renderPlayerHand();
         renderMelds();
     }
+
     function playerDiscard(index) {
         if (!isWaitingPlayerDiscard || isGameOver) return;
         

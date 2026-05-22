@@ -79,6 +79,31 @@
             border-color: #ffeb3b !important;
             box-shadow: 0 0 12px rgba(255, 235, 59, 0.6) !important;
         }
+
+        /* 【新增】NPC 卡通大頭貼樣式 */
+        .npc-avatar-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 2px;
+        }
+        .npc-avatar {
+            width: 24px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .npc-name {
+            font-weight: bold;
+            color: #e0e0e0;
+        }
         
         .npc-action { 
             display: block;
@@ -100,7 +125,6 @@
         .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 6px #e91e63; }
         .npc-action.act-discard { background: rgba(255,255,255,0.2); color: #fff; }
 
-        /* 【新增】NPC 專用副露文字記憶列 */
         .npc-melds-bar {
             width: 100%;
             min-height: 15px;
@@ -290,7 +314,10 @@
         <div id="npcArea">
             <div class="npc-column">
                 <div class="npc-box" id="npc1Box">
-                    <div>下家</div>
+                    <div class="npc-avatar-wrapper">
+                        <div class="npc-avatar">👧</div>
+                        <div class="npc-name">下家</div>
+                    </div>
                     <span class="npc-action" id="npc1Act">-</span>
                     <div class="npc-melds-bar" id="npc1MeldsBar">無副露</div>
                 </div>
@@ -299,7 +326,10 @@
 
             <div class="npc-column">
                 <div class="npc-box" id="npc2Box">
-                    <div>對家</div>
+                    <div class="npc-avatar-wrapper">
+                        <div class="npc-avatar">🧔</div>
+                        <div class="npc-name">對家</div>
+                    </div>
                     <span class="npc-action" id="npc2Act">-</span>
                     <div class="npc-melds-bar" id="npc2MeldsBar">無副露</div>
                 </div>
@@ -308,7 +338,10 @@
 
             <div class="npc-column">
                 <div class="npc-box" id="npc3Box">
-                    <div>上家</div>
+                    <div class="npc-avatar-wrapper">
+                        <div class="npc-avatar">👵</div>
+                        <div class="npc-name">上家</div>
+                    </div>
                     <span class="npc-action" id="npc3Act">-</span>
                     <div class="npc-melds-bar" id="npc3MeldsBar">無副露</div>
                 </div>
@@ -450,7 +483,6 @@
         span.className = "npc-action " + className;
     }
 
-    // 【核心新增】：將 NPC 複雜的副露數組，轉譯成簡潔、省空間的緊湊文字列
     function renderNpcMeldsText(npc) {
         const bar = document.getElementById(npc.barId);
         if (!bar) return;
@@ -463,13 +495,10 @@
         let strings = [];
         npc.melds.forEach(meld => {
             if (meld.length === 4) {
-                // 槓牌
                 strings.push(`[${meld[0].name}槓]`);
             } else if (meld[0].name === meld[1].name && meld[1].name === meld[2].name) {
-                // 碰牌
                 strings.push(`[${meld[0].name}碰]`);
             } else {
-                // 吃牌
                 let suit = meld[0].suit;
                 let numStr = meld.map(t => t.val).join('');
                 strings.push(`[${numStr}${suit}]`);
@@ -478,7 +507,6 @@
 
         bar.innerText = strings.join(' ');
         
-        // 如果副露大於等於3副，顏色變橙色警示大牌風險
         if (npc.melds.length >= 3) {
             bar.style.color = "#ff9800";
         } else {
@@ -717,7 +745,7 @@
             if(m) m.push(t);
         }
         
-        renderNpcMeldsText(npc); // 更新記憶文字
+        renderNpcMeldsText(npc);
         
         setTimeout(() => {
             if(deck.length === 0) { endGame("流局！"); return; }
@@ -850,7 +878,7 @@
                         if(checker.hand[k].name === tile.name) group.push(checker.hand.splice(k,1)[0]);
                     }
                     checker.melds.push(group);
-                    renderNpcMeldsText(checker); // 刷新文字副露列
+                    renderNpcMeldsText(checker); 
                     currentTurn = nextIdx;
                     
                     setTimeout(() => {
@@ -872,7 +900,7 @@
                         if(checker.hand[k].name === tile.name) checker.hand.splice(k,1);
                     }
                     checker.melds.push([tile, tile, tile]);
-                    renderNpcMeldsText(checker); // 刷新文字副露列
+                    renderNpcMeldsText(checker); 
                     currentTurn = nextIdx;
                     
                     setTimeout(() => { npcAIPlay(checker); }, 1500);
@@ -903,7 +931,7 @@
                 let t2 = hand.splice(hand.findIndex(t => t.suit === s && t.val === eatGroup[1]), 1)[0];
                 let combined = [t1, tile, t2].sort((a,b)=>a.val-b.val);
                 nextPlayer.melds.push(combined);
-                renderNpcMeldsText(nextPlayer); // 刷新文字副露列
+                renderNpcMeldsText(nextPlayer); 
                 
                 currentTurn = nextPlayerIdx;
                 setTimeout(() => { npcAIPlay(nextPlayer); }, 1500);

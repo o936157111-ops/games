@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>台灣 16 張麻將 - 字型圖案修正版</title>
+    <title>台灣 16 張麻將 - 防作弊修正版</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
         
         body {
             background-color: #166133; 
             color: #fff;
-            /* 調整字型順序，強迫瀏覽器優先使用純文字符號，防止部分牌（如紅中）被手機強制轉成彩色3D圖片 */
             font-family: "Segoe UI Symbol", "Apple Symbols", "PingFang TC", "Microsoft JhengHei", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
             display: flex;
             flex-direction: column;
@@ -199,7 +198,6 @@
             margin-bottom: 3px;
         }
         
-        /* 針對紅中、發財等可能被手機轉成彩色Emoji的字元進行CSS色彩修正 */
         .tile, .pool-tile {
             text-shadow: 0 0 0 #000; 
         }
@@ -257,7 +255,7 @@
 <body>
 
     <div id="header">
-        <h2>台灣 16 張麻將 (字型圖案修正版)</h2>
+        <h2>台灣 16 張麻將 (防作弊修正版)</h2>
         <div id="msg">正在初始化牌局...</div>
     </div>
 
@@ -306,8 +304,6 @@
     const suits = ['萬', '筒', '條'];
     const suitOrder = { '萬':1, '筒':2, '條':3, '字':4 };
 
-    // 【修正重點】1. 補上9條的 Unicode 圖形 🀘 
-    // 【修正重點】2. 在紅中 (🀄)、東、南、西、北、發、白後面，強制加上文字變體符號 '\uFE0E'，杜絕手機3D圖片化
     const tileUnicode = {
         '1萬': '🀇', '2萬': '🀈', '3萬': '🀉', '4萬': '🀊', '5萬': '🀋', '6萬': '🀌', '7萬': '🀍', '8萬': '🀎', '9萬': '🀏',
         '1筒': '🀙', '2筒': '🀚', '3筒': '🀛', '4筒': '🀜', '5筒': '🀝', '6筒': '🀞', '7筒': '🀟', '8筒': '🀠', '9筒': '🀡',
@@ -540,6 +536,7 @@
                     if(idx === -1) idx = p.hand.length - 1;
                     npcDiscard(p, idx);
                 } else {
+                    // 【修正重點】進入暗槓/加槓檢查
                     let npcGangOpt = checkNpcSelfGang(p);
                     if(npcGangOpt) {
                         executeNpcGang(p, npcGangOpt);
@@ -597,14 +594,21 @@
         });
     }
 
+    // 【修正防作弊重點】：修正 NPC 檢查自己暗槓與加槓的嚴格邏輯，杜絕無中生有
     function checkNpcSelfGang(npc) {
         let counts = {};
         npc.hand.forEach(t => counts[t.name] = (counts[t.name] || 0) + 1);
+        
+        // 只有「4張都在手牌內」才允許暗槓！如果之前有打出過，手牌計數絕對不可能達到 4。
         for (let name in counts) {
-            if (counts[name] === 4) return { type: 'AN_GANG', name: name };
+            if (counts[name] === 4) {
+                return { type: 'AN_GANG', name: name };
+            }
         }
+        
+        // 加槓：手牌裡有第 4 張，且桌面上已經有自己「碰」的 3 張碰牌組
         for (let t of npc.hand) {
-            if (npc.melds.some(m => m.length === 3 && m[0].name === t.name)) {
+            if (npc.melds.some(m => m.length === 3 && m[0].name === t.name && m[1].name === t.name)) {
                 return { type: 'JIA_GANG', name: t.name };
             }
         }
@@ -612,14 +616,17 @@
     }
 
     function executeNpcGang(npc, gangOpt) {
-        setNpcStatusStyle(npc, `暗槓 🀄`, `act-gang`);
         if (gangOpt.type === 'AN_GANG') {
+            setNpcStatusStyle(npc, `暗槓 🀄`, `act-gang`);
+            document.getElementById('msg').innerText = `📢 ${npc.name} 宣告暗槓！`;
             let group = [];
             for(let i=npc.hand.length-1; i>=0; i--) {
                 if(npc.hand[i].name === gangOpt.name) group.push(npc.hand.splice(i,1)[0]);
             }
             npc.melds.push(group);
         } else {
+            setNpcStatusStyle(npc, `加槓 🀄`, `act-gang`);
+            document.getElementById('msg').innerText = `📢 ${npc.name} 宣告加槓！`;
             let idx = npc.hand.findIndex(t => t.name === gangOpt.name);
             let t = npc.hand.splice(idx, 1)[0];
             let m = npc.melds.find(m => m.length === 3 && m[0].name === gangOpt.name);
@@ -668,7 +675,7 @@
         sortHand(npc.hand);
         
         lastDiscardedTile = discarded;
-        lastDiscarderPoolId = npc.poolId;
+        lastDiscarderPoolId = p.poolId; // 保留原綁定
         pools[npc.name].push(discarded);
         
         if(!npc.isTingLocked) {

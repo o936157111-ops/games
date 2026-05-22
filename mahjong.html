@@ -64,7 +64,7 @@
 
         .npc-box {
             background: rgba(0, 0, 0, 0.4); border: 1px solid #2c854c; padding: 4px 2px;
-            border-radius: 6px; text-align: center; width: 100%; font-size: 12px;
+            border-radius: 6px; text-align: center; width: 100%; font-size: 11px;
             transition: all 0.3s ease;
         }
         .npc-box.active { border-color: #ffeb3b; background: rgba(255,235,59,0.15); box-shadow: 0 0 6px rgba(255,235,59,0.5); }
@@ -99,6 +99,21 @@
         .npc-action.act-gang { background: #0288d1; color: #fff; box-shadow: 0 0 4px #0288d1; }
         .npc-action.act-ting { background: #e91e63; color: #fff; box-shadow: 0 0 6px #e91e63; }
         .npc-action.act-discard { background: rgba(255,255,255,0.2); color: #fff; }
+
+        /* 【新增】NPC 專用副露文字記憶列 */
+        .npc-melds-bar {
+            width: 100%;
+            min-height: 15px;
+            margin-top: 2px;
+            font-size: 10px;
+            color: #a5d6a7;
+            text-align: center;
+            word-break: break-all;
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+            padding: 1px 2px;
+            font-family: monospace;
+        }
 
         .discard-pool {
             display: flex;
@@ -152,7 +167,6 @@
         .action-btn.gang { background: #0288d1; display: none; }
         .action-btn.pass { background: #757575; display: block; }
 
-        /* 吃牌選擇專用副面板 */
         #eatSubPanel {
             display: none; flex-direction: column; gap: 6px; width: 100%; margin-top: 6px;
             border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 6px;
@@ -275,17 +289,29 @@
     <div id="gameTable">
         <div id="npcArea">
             <div class="npc-column">
-                <div class="npc-box" id="npc1Box"><div>下家</div><span class="npc-action" id="npc1Act">-</span></div>
+                <div class="npc-box" id="npc1Box">
+                    <div>下家</div>
+                    <span class="npc-action" id="npc1Act">-</span>
+                    <div class="npc-melds-bar" id="npc1MeldsBar">無副露</div>
+                </div>
                 <div class="discard-pool npc-pool" id="rightPool"></div>
             </div>
 
             <div class="npc-column">
-                <div class="npc-box" id="npc2Box"><div>對家</div><span class="npc-action" id="npc2Act">-</span></div>
+                <div class="npc-box" id="npc2Box">
+                    <div>對家</div>
+                    <span class="npc-action" id="npc2Act">-</span>
+                    <div class="npc-melds-bar" id="npc2MeldsBar">無副露</div>
+                </div>
                 <div class="discard-pool npc-pool" id="topPool"></div>
             </div>
 
             <div class="npc-column">
-                <div class="npc-box" id="npc3Box"><div>上家</div><span class="npc-action" id="npc3Act">-</span></div>
+                <div class="npc-box" id="npc3Box">
+                    <div>上家</div>
+                    <span class="npc-action" id="npc3Act">-</span>
+                    <div class="npc-melds-bar" id="npc3MeldsBar">無副露</div>
+                </div>
                 <div class="discard-pool npc-pool" id="leftPool"></div>
             </div>
         </div>
@@ -336,16 +362,16 @@
     
     let players = [
         { name: "你", hand: [], melds: [], isNPC: false, poolId: "playerPool", isTingLocked: false }, 
-        { name: "下家", hand: [], melds: [], isNPC: true, boxId: "npc1Box", actId: "npc1Act", poolId: "rightPool", isTingLocked: false },
-        { name: "對家", hand: [], melds: [], isNPC: true, boxId: "npc2Box", actId: "npc2Act", poolId: "topPool", isTingLocked: false },
-        { name: "上家", hand: [], melds: [], isNPC: true, boxId: "npc3Box", actId: "npc3Act", poolId: "leftPool", isTingLocked: false }
+        { name: "下家", hand: [], melds: [], isNPC: true, boxId: "npc1Box", actId: "npc1Act", barId: "npc1MeldsBar", poolId: "rightPool", isTingLocked: false },
+        { name: "對家", hand: [], melds: [], isNPC: true, boxId: "npc2Box", actId: "npc2Act", barId: "npc2MeldsBar", poolId: "topPool", isTingLocked: false },
+        { name: "上家", hand: [], melds: [], isNPC: true, boxId: "npc3Box", actId: "npc3Act", barId: "npc3MeldsBar", poolId: "leftPool", isTingLocked: false }
     ];
     
     let currentTurn = 0; 
     let isWaitingPlayerDiscard = false;
     let lastDiscardedTile = null;
     let lastDiscarderPoolId = null; 
-    let activeEatOptions = []; // 儲存多重吃牌選項 [[v1, v2], [v3, v4]]
+    let activeEatOptions = []; 
     let isGameOver = false;
 
     let activeGangOptions = []; 
@@ -402,6 +428,8 @@
             if(p.isNPC) {
                 setNpcStatusStyle(p, '-', 'act-discard');
                 document.getElementById(p.boxId).classList.remove('ting-danger');
+                document.getElementById(p.barId).innerText = "無副露";
+                document.getElementById(p.barId).style.color = "#a5d6a7";
             }
         });
 
@@ -420,6 +448,42 @@
         if(!span) return;
         span.innerText = text;
         span.className = "npc-action " + className;
+    }
+
+    // 【核心新增】：將 NPC 複雜的副露數組，轉譯成簡潔、省空間的緊湊文字列
+    function renderNpcMeldsText(npc) {
+        const bar = document.getElementById(npc.barId);
+        if (!bar) return;
+        if (npc.melds.length === 0) {
+            bar.innerText = "無副露";
+            bar.style.color = "#a5d6a7";
+            return;
+        }
+
+        let strings = [];
+        npc.melds.forEach(meld => {
+            if (meld.length === 4) {
+                // 槓牌
+                strings.push(`[${meld[0].name}槓]`);
+            } else if (meld[0].name === meld[1].name && meld[1].name === meld[2].name) {
+                // 碰牌
+                strings.push(`[${meld[0].name}碰]`);
+            } else {
+                // 吃牌
+                let suit = meld[0].suit;
+                let numStr = meld.map(t => t.val).join('');
+                strings.push(`[${numStr}${suit}]`);
+            }
+        });
+
+        bar.innerText = strings.join(' ');
+        
+        // 如果副露大於等於3副，顏色變橙色警示大牌風險
+        if (npc.melds.length >= 3) {
+            bar.style.color = "#ff9800";
+        } else {
+            bar.style.color = "#fff";
+        }
     }
 
     function updateTingStatus() {
@@ -653,6 +717,8 @@
             if(m) m.push(t);
         }
         
+        renderNpcMeldsText(npc); // 更新記憶文字
+        
         setTimeout(() => {
             if(deck.length === 0) { endGame("流局！"); return; }
             const newTile = deck.pop();
@@ -752,7 +818,6 @@
 
                 let canEat = false;
                 activeEatOptions = [];
-                // 【吃牌核心重構】：上家打牌時，找出所有可能的吃牌組合
                 if (shooterIndex === 3 && tile.suit !== '字') {
                     let v = tile.val, s = tile.suit;
                     let has = (val) => checker.hand.some(t => t.suit === s && t.val === val);
@@ -785,6 +850,7 @@
                         if(checker.hand[k].name === tile.name) group.push(checker.hand.splice(k,1)[0]);
                     }
                     checker.melds.push(group);
+                    renderNpcMeldsText(checker); // 刷新文字副露列
                     currentTurn = nextIdx;
                     
                     setTimeout(() => {
@@ -806,6 +872,7 @@
                         if(checker.hand[k].name === tile.name) checker.hand.splice(k,1);
                     }
                     checker.melds.push([tile, tile, tile]);
+                    renderNpcMeldsText(checker); // 刷新文字副露列
                     currentTurn = nextIdx;
                     
                     setTimeout(() => { npcAIPlay(checker); }, 1500);
@@ -836,6 +903,7 @@
                 let t2 = hand.splice(hand.findIndex(t => t.suit === s && t.val === eatGroup[1]), 1)[0];
                 let combined = [t1, tile, t2].sort((a,b)=>a.val-b.val);
                 nextPlayer.melds.push(combined);
+                renderNpcMeldsText(nextPlayer); // 刷新文字副露列
                 
                 currentTurn = nextPlayerIdx;
                 setTimeout(() => { npcAIPlay(nextPlayer); }, 1500);
@@ -896,15 +964,12 @@
             return;
         }
 
-        // 【吃牌核心機制修正】：玩家點擊主面板的「吃」
         if (action === 'EAT_CLICK') {
             if (activeEatOptions.length === 0) return;
             
             if (activeEatOptions.length === 1) {
-                // 如果只有一種吃法，直接執行
                 executeEat(activeEatOptions[0]);
             } else {
-                // 如果有多種吃法，打開副選單供玩家手動點選
                 const subPanel = document.getElementById('eatSubPanel');
                 subPanel.innerHTML = '';
                 subPanel.style.display = 'flex';
@@ -1004,7 +1069,6 @@
         renderMelds();
     }
 
-    // 【智慧吃牌執行函式】：根據玩家選定的組合扣牌、並推進局勢
     function executeEat(opt) {
         let hand = players[0].hand;
         let tile = lastDiscardedTile;
@@ -1014,7 +1078,6 @@
         isAwaitingTingChoice = false;
         document.getElementById('actionPanel').style.display = 'none';
         
-        // 從上家海裡移除這張牌
         pools[shooterObj.name].pop(); 
         renderSinglePool(shooterObj.name, shooterObj.poolId);
 

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>命運紙捲迷宮：AI語意智慧劇本版</title>
+    <title>命運紙捲迷宮</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5328509571221811" crossorigin="anonymous"></script>
     <style>
         :root {
             --bg-color: #faf6eb; 
@@ -16,11 +17,12 @@
             margin: 0;
             padding: 10px; 
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column;      /* 關鍵：強制垂直排列，讓廣告在遊戲上方 */
+            align-items: center;         /* 關鍵：水平置中 */
+            justify-content: flex-start; /* 改為 flex-start 讓內容從頂部開始排，不會被隱藏 */
             min-height: 100vh;
             min-height: 100dvh; 
-            overflow: hidden; 
+            overflow: auto;              /* 改為 auto，確保內容長度超過螢幕時可以滾動 */
         }
         
         #scroll-container {
@@ -170,6 +172,19 @@
     </style>
 </head>
 <body>
+
+<div class="ad-container" style="text-align: center; margin-bottom: 10px; background: #f0ebe0; width: 100%;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-5328509571221811"
+         data-ad-slot="2707718030"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+         (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
+
 
 <div id="scroll-container">
     
@@ -470,8 +485,5 @@
     };
 </script>
 
-</head>
-<body>
-<!-- 這裡保持 HTML 輕量，所有內容皆由 JavaScript 智慧注入 -->
 </body>
 </html>
